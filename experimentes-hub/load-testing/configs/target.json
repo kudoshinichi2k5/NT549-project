@@ -1,0 +1,7 @@
+{
+  "base_url": "http://mini-ecommerce.tienphatng237.com",
+  "products_endpoint": "/api/v1/products",
+  "orders_endpoint": "/api/v1/orders",
+  "users_endpoint": "/api/v1/users",
+  "login_endpoint": "/api/v1/users/login"
+}

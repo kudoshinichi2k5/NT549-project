@@ -1,0 +1,8 @@
+{
+  "algorithm": "PPO",
+  "total_timesteps": 100000,
+  "learning_rate": 0.0008,
+  "eval_success_rate": 0.63,
+  "eval_avg_recovery_steps": 33.698412698412696,
+  "eval_avg_reward": -23.9381736459323
+}

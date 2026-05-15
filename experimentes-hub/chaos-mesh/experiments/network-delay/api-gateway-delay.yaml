@@ -1,0 +1,30 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+
+metadata:
+  name: api-gateway-to-product-delay
+  namespace: mini-ecommerce
+
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+      - mini-ecommerce
+    labelSelectors:
+      app: api-gateway
+  delay:
+    # Keep the delay deterministic so p95 and SLA signals are easy to validate.
+    latency: "400ms"
+    jitter: "0ms"
+    correlation: "100"
+  direction: to
+  target:
+    mode: all
+    selector:
+      namespaces:
+        - mini-ecommerce
+      labelSelectors:
+        app: product-service
+  # Keep the fault active long enough to see baseline -> chaos -> recovery.
+  duration: "90s"

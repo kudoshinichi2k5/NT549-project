@@ -1,0 +1,2 @@
+load-testing/scripts-k6/.env.k6
+chaos-mesh/.env.chaos

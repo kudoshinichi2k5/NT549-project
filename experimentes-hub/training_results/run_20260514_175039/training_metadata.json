@@ -1,0 +1,79 @@
+{
+  "timestamp": "20260514_175039",
+  "run_name": "run_20260514_175039",
+  "env_config": {
+    "max_steps": 100,
+    "step_interval_sec": 10,
+    "num_deployments": 5,
+    "num_nodes": 3
+  },
+  "max_steps_per_episode": 100,
+  "training_config": {
+    "algorithm": "PPO",
+    "total_timesteps": 100000,
+    "learning_rate": 0.0008,
+    "n_steps": 4096,
+    "batch_size": 128,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.03,
+    "clip_range": 0.2
+  },
+  "total_timesteps": 100000,
+  "learning_rate": 0.0008,
+  "gamma": 0.99,
+  "gae_lambda": 0.95,
+  "n_steps": 4096,
+  "batch_size": 128,
+  "reward_weights": {
+    "alpha_stability": 12.0,
+    "beta_overhead": 2.0,
+    "gamma_impact": 2.0,
+    "delta_sla": 4.0,
+    "step_penalty": 0.04,
+    "recovery_bonus": 50.0,
+    "collapse_penalty": -60.0
+  },
+  "state_space": {
+    "continuous_dims": 8,
+    "discrete_dims": 4,
+    "total_obs_shape": 12
+  },
+  "action_space": {
+    "total_actions": 7,
+    "actions": {
+      "0": "idle",
+      "1": "restart_pod",
+      "2": "scale_up",
+      "3": "scale_down",
+      "4": "drain_node",
+      "5": "cordon_node",
+      "6": "uncordon_node"
+    }
+  },
+  "failure_scenarios": [
+    "node_failure",
+    "pod_crash_loop",
+    "resource_exhaustion",
+    "network_degradation"
+  ],
+  "trained_agent": "PPO",
+  "trained_timesteps": 100000,
+  "eval_metrics": {
+    "success_rate": 0.63,
+    "avg_recovery_steps": 33.698412698412696,
+    "avg_reward": -23.9381736459323,
+    "std_reward": 28.540892190780855
+  },
+  "baseline_metrics": {
+    "success_rate": 1.0,
+    "avg_recovery_steps": 38.0,
+    "avg_reward": -58.14956754940421,
+    "std_reward": 37.11963709783119
+  },
+  "improvement_metrics": {
+    "success_rate_improvement_pct": -37.0,
+    "avg_reward_delta": 34.211393903471915,
+    "avg_recovery_steps_delta": 4.301587301587304
+  }
+}

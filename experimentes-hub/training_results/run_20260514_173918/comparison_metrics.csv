@@ -1,0 +1,5 @@
+Metric,Trained Agent,Baseline (Random)
+Success Rate,48.0%,100.0%
+Avg Recovery Steps,36.4,36.8
+Avg Episode Reward,-22.570,-48.473
+Reward Std Dev,30.130,32.167

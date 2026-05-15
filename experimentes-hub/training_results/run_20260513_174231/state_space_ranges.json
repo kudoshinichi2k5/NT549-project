@@ -1,0 +1,72 @@
+{
+  "continuous_metrics": {
+    "cpu_utilization": [
+      0.0,
+      1.0
+    ],
+    "memory_usage": [
+      0.0,
+      1.0
+    ],
+    "disk_io": [
+      0.0,
+      1.0
+    ],
+    "network_bandwidth": [
+      0.0,
+      1.0
+    ],
+    "p90_latency": [
+      0.0,
+      1.0
+    ],
+    "p99_latency": [
+      0.0,
+      1.0
+    ],
+    "error_rate_5xx": [
+      0.0,
+      1.0
+    ],
+    "throughput": [
+      0.0,
+      1.0
+    ]
+  },
+  "discrete_metrics": {
+    "node_ready_status": [
+      0,
+      3
+    ],
+    "pending_pods": [
+      0,
+      100
+    ],
+    "crashloop_flag": [
+      0,
+      20
+    ],
+    "failed_pods": [
+      0,
+      50
+    ]
+  },
+  "discrete_sample_ranges": {
+    "node_ready_status": [
+      0,
+      3
+    ],
+    "pending_pods": [
+      0,
+      100
+    ],
+    "crashloop_flag": [
+      0,
+      20
+    ],
+    "failed_pods": [
+      0,
+      50
+    ]
+  }
+}

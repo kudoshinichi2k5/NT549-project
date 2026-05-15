@@ -1,0 +1,25 @@
+Usage: ./run-chaos.sh <experiment-name>
+
+Default env file:
+  ./chaos-mesh/.env.chaos
+
+Supported experiments:
+  product-crash-loop
+  network-delay-api-gateway
+  pod-kill-product
+  pod-kill-order
+  cpu-stress-product
+
+Environment values:
+  RUN_LOAD=false
+  BASELINE_DURATION=30s
+  WARMUP_DURATION=60s
+  CHAOS_DURATION=<override>
+  RECOVERY_DURATION=60s
+  LOAD_TEST_DIR=./load-testing
+  LOAD_RUN_SCRIPT=<load-testing/scripts/run-user-journey.sh>
+  LOAD_ENV_FILE=<load-testing/scripts-k6/.env.k6>
+
+Examples:
+  ./chaos-mesh/scripts/run-chaos.sh network-delay-api-gateway
+  ./chaos-mesh/scripts/run-chaos.sh product-crash-loop

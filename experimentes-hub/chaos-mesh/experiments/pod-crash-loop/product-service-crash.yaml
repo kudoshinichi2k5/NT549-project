@@ -1,0 +1,23 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: Schedule
+
+metadata:
+  name: product-service-crash-loop-like
+  namespace: mini-ecommerce
+
+spec:
+  # Re-kill one product-service container every 15s to keep the pod unstable.
+  schedule: "@every 15s"
+  type: PodChaos
+  concurrencyPolicy: Forbid
+  historyLimit: 1
+  podChaos:
+    action: container-kill
+    containerNames:
+      - product-service
+    mode: one
+    selector:
+      namespaces:
+        - mini-ecommerce
+      labelSelectors:
+        app: product-service
