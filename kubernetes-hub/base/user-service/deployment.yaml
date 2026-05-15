@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      serviceAccountName: user-service
+      containers:
+        - name: user-service
+          image: tienphatng237/mini-ecommerce-user-service
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+
+          env:
+            - name: DB_HOST
+              value: user-db
+            - name: DB_PORT
+              value: "5432"
+            - name: JWT_SECRET
+              value: ""
+              valueFrom:
+                secretKeyRef:
+                  name: auth-jwt-secret
+                  key: JWT_SECRET
+          envFrom:
+            - secretRef:
+                name: user-db-secret

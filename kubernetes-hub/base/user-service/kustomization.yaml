@@ -1,0 +1,5 @@
+resources:
+  - serviceaccount.yaml
+  - migration-job.yaml
+  - deployment.yaml
+  - service.yaml
