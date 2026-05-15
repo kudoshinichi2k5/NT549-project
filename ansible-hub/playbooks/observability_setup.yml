@@ -1,0 +1,101 @@
+# Observability playbook is split by inventory role so each node can be applied independently.
+# - monitoring  -> obser-1 (Grafana, Prometheus, Alertmanager, exporters, Promtail)
+# - logging     -> obser-2 (Loki, Tempo)
+#
+# Example independent runs:
+#   ansible-playbook -i inventories/dev/observability.ini playbooks/observability_setup.yml --limit obser-1
+#   ansible-playbook -i inventories/dev/observability.ini playbooks/observability_setup.yml --limit obser-2
+#   ansible-playbook -i inventories/dev/observability.ini playbooks/observability_setup.yml --limit obser-2 --tags tempo-node
+
+- name: Observability | Monitoring node
+  hosts: monitoring
+  become: true
+  tags:
+    - observability
+    - monitoring-node
+  roles:
+    - role: common
+      tags:
+        - common
+        - observability
+
+    - role: kubeconfig
+      tags:
+        - kubeconfig
+        - observability
+
+    - role: helm
+      tags:
+        - helm
+        - observability
+
+    - role: observability/alertmanager
+      tags:
+        - observability
+        - alertmanager
+
+    - role: observability/prometheus
+      tags:
+        - observability
+        - prometheus
+
+    - role: observability/grafana
+      tags:
+        - observability
+        - grafana
+
+    - role: observability/grafana/datasources
+      tags:
+        - observability
+        - grafana_datasource
+
+    - role: observability/kube_state_metrics
+      tags:
+        - observability
+        - kube-state-metrics
+
+    - role: observability/node_exporter
+      tags:
+        - observability
+        - node-exporter
+
+    - role: observability/logging/promtail
+      tags:
+        - observability
+        - promtail
+
+- name: Observability | Logging node (Loki)
+  hosts: logging
+  become: true
+  tags:
+    - observability
+    - logging-node
+    - loki-node
+  roles:
+    - role: common
+      tags:
+        - common
+        - observability
+
+    - role: observability/logging/loki
+      tags:
+        - observability
+        - loki
+
+- name: Observability | Tracing node (Tempo)
+  hosts: logging
+  become: true
+  tags:
+    - observability
+    - tracing-node
+    - tempo-node
+  roles:
+    - role: common
+      tags:
+        - common
+        - observability
+
+    - role: observability/tracing/tempo
+      tags:
+        - observability
+        - tempo

@@ -1,0 +1,24 @@
+---
+- name: Helm | Download install script
+  get_url:
+    url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    dest: /tmp/get_helm.sh
+    mode: '0755'
+  tags:
+    - helm
+    - observability
+
+- name: Helm | Install Helm binary
+  command: /tmp/get_helm.sh
+  args:
+    creates: /usr/local/bin/helm
+  tags:
+    - helm
+    - observability
+
+- name: Helm | Verify Helm installation
+  command: helm version
+  changed_when: false
+  tags:
+    - helm
+    - observability

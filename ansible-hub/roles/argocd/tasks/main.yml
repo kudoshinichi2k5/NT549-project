@@ -1,0 +1,11 @@
+---
+- name: Create argocd namespace
+  command: sudo k0s kubectl create namespace argocd
+  register: ns_result
+  failed_when: false
+
+- name: Install Argo CD
+  command: sudo k0s kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+- name: Wait for Argo CD server
+  command: sudo k0s kubectl rollout status deployment/argocd-server -n argocd

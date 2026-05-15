@@ -1,0 +1,102 @@
+# ============================================================
+# ALERTMANAGER | INSTALL
+# ============================================================
+
+- name: Check for local Alertmanager secret overrides
+  stat:
+    path: "{{ role_path }}/defaults/main.yml"
+  register: alertmanager_local_defaults
+  tags: [alertmanager, alertmanager_install]
+
+- name: Load Alertmanager example defaults
+  include_vars:
+    file: "{{ role_path }}/defaults/main.yml.example"
+  tags: [alertmanager, alertmanager_install]
+
+- name: Load local Alertmanager secret overrides
+  include_vars:
+    file: "{{ role_path }}/defaults/main.yml"
+  when: alertmanager_local_defaults.stat.exists
+  no_log: true
+  tags: [alertmanager, alertmanager_install]
+
+- name: Create alertmanager user
+  # Dedicated system account for running the Alertmanager service.
+  user:
+    name: alertmanager
+    system: true
+    shell: /usr/sbin/nologin
+  tags: [alertmanager, alertmanager_install]
+
+- name: Create alertmanager directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: alertmanager
+    group: alertmanager
+    mode: '0755'
+  loop:
+    - /etc/alertmanager
+    - /var/lib/alertmanager
+  tags: [alertmanager, alertmanager_install]
+
+- name: Download Alertmanager archive
+  get_url:
+    url: "https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz"
+    dest: /tmp/alertmanager.tar.gz
+    mode: '0644'
+  tags: [alertmanager, alertmanager_install]
+
+- name: Extract Alertmanager archive
+  unarchive:
+    src: /tmp/alertmanager.tar.gz
+    dest: /tmp
+    remote_src: true
+  tags: [alertmanager, alertmanager_install]
+
+- name: Install Alertmanager binary
+  copy:
+    src: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64/alertmanager"
+    dest: /usr/local/bin/alertmanager
+    owner: root
+    group: root
+    mode: '0755'
+    remote_src: true
+  tags: [alertmanager, alertmanager_install]
+
+# ============================================================
+# ALERTMANAGER | CONFIG
+# ============================================================
+
+- name: Deploy Alertmanager configuration
+  template:
+    src: alertmanager.yml.j2
+    dest: /etc/alertmanager/alertmanager.yml
+    owner: alertmanager
+    group: alertmanager
+    mode: '0644'
+  notify: Restart Alertmanager
+  tags: [alertmanager, alertmanager_config]
+
+- name: Deploy Alertmanager systemd service
+  template:
+    src: alertmanager.service.j2
+    dest: /etc/systemd/system/alertmanager.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart Alertmanager
+  tags: [alertmanager, alertmanager_config]
+
+# ============================================================
+# ALERTMANAGER | SERVICE
+# ============================================================
+
+- name: Ensure Alertmanager service is enabled and running
+  systemd:
+    name: alertmanager
+    enabled: true
+    state: started
+  tags: [alertmanager, alertmanager_service]

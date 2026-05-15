@@ -1,0 +1,17 @@
+grafana_dashboard_provisioning_dir: /etc/grafana/provisioning/dashboards
+grafana_dashboard_dir: /var/lib/grafana/dashboards/kubernetes
+
+grafana_enable_metrics_dashboards: true
+grafana_enable_logging_dashboards: true
+grafana_enable_tracing_dashboards: true
+
+grafana_metrics_dashboards:
+  - prometheus-application-metrics.json
+  - prometheus-system-metrics.json
+  - rl-self-healing.json
+
+grafana_logging_dashboards:
+  - loki-logs.json
+
+grafana_tracing_dashboards:
+  - tempo-tracing.json

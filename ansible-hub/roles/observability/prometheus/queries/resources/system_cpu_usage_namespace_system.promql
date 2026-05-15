@@ -1,0 +1,10 @@
+clamp_min(
+  sum(irate(node_cpu_seconds_total{mode!="idle"}[15s])) -
+  (
+    sum(sum by (service) (rate(process_cpu_time_ns_total{job="mini-ecommerce-actuator"}[1m])) / 1e9)
+    or sum(sum by (service) (process_cpu_usage{job="mini-ecommerce-actuator"} * system_cpu_count{job="mini-ecommerce-actuator"}))
+    or vector(0)
+  ),
+  0
+)
+or vector(0)

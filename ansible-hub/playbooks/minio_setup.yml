@@ -1,0 +1,5 @@
+- name: MinIO | Single node object storage
+  hosts: minio
+  become: true
+  roles:
+    - { role: minio, tags: [minio] }

@@ -1,0 +1,113 @@
+- name: Install OpenVPN and dependencies
+  apt:
+    name:
+      - openvpn
+      - easy-rsa
+      - iptables-persistent
+    update_cache: yes
+
+# ===== ENABLE IP FORWARD =====
+- name: Enable IPv4 forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+    reload: yes
+
+# ===== DISABLE RP FILTER =====
+- name: Disable rp_filter globally
+  sysctl:
+    name: net.ipv4.conf.all.rp_filter
+    value: "0"
+    state: present
+    reload: yes
+
+- name: Disable rp_filter default
+  sysctl:
+    name: net.ipv4.conf.default.rp_filter
+    value: "0"
+    state: present
+    reload: yes
+
+- name: Disable rp_filter on private interface
+  sysctl:
+    name: "net.ipv4.conf.{{ openvpn_private_iface }}.rp_filter"
+    value: "0"
+    state: present
+    reload: yes
+
+# ===== OPENVPN DIR =====
+- name: Create OpenVPN server directory
+  file:
+    path: "{{ openvpn_server_dir }}"
+    state: directory
+    mode: "0755"
+
+# ===== EASY-RSA =====
+- name: Initialize easy-rsa directory
+  command: make-cadir {{ easy_rsa_dir }}
+  args:
+    creates: "{{ easy_rsa_dir }}/easyrsa"
+
+- name: Initialize PKI
+  command: ./easyrsa init-pki
+  args:
+    chdir: "{{ easy_rsa_dir }}"
+    creates: "{{ easy_rsa_dir }}/pki"
+
+- name: Build CA
+  command: ./easyrsa --batch build-ca nopass
+  args:
+    chdir: "{{ easy_rsa_dir }}"
+    creates: "{{ easy_rsa_dir }}/pki/ca.crt"
+
+- name: Generate server certificate
+  command: ./easyrsa --batch build-server-full server nopass
+  args:
+    chdir: "{{ easy_rsa_dir }}"
+    creates: "{{ easy_rsa_dir }}/pki/issued/server.crt"
+
+- name: Generate client certificate
+  command: ./easyrsa --batch build-client-full {{ openvpn_client_name }} nopass
+  args:
+    chdir: "{{ easy_rsa_dir }}"
+    creates: "{{ easy_rsa_dir }}/pki/issued/{{ openvpn_client_name }}.crt"
+
+# ===== GENERATE DH (QUAN TRỌNG NHẤT) =====
+- name: Generate Diffie-Hellman parameters
+  command: ./easyrsa gen-dh
+  args:
+    chdir: "{{ easy_rsa_dir }}"
+    creates: "{{ easy_rsa_dir }}/pki/dh.pem"
+
+- name: Copy DH file to OpenVPN server directory
+  copy:
+    src: "{{ easy_rsa_dir }}/pki/dh.pem"
+    dest: "{{ openvpn_server_dir }}/dh.pem"
+    remote_src: yes
+    mode: "0600"
+
+# ===== COPY CERTS =====
+- name: Copy certificates to OpenVPN directory
+  copy:
+    src: "{{ easy_rsa_dir }}/pki/{{ item.src }}"
+    dest: "{{ openvpn_server_dir }}/{{ item.dest }}"
+    remote_src: yes
+  loop:
+    - { src: ca.crt, dest: ca.crt }
+    - { src: issued/server.crt, dest: server.crt }
+    - { src: private/server.key, dest: server.key }
+
+# ===== SERVER CONFIG =====
+- name: Deploy OpenVPN server config
+  template:
+    src: server.conf.j2
+    dest: "{{ openvpn_server_dir }}/server.conf"
+  notify: Restart OpenVPN
+
+# ===== START SERVICE =====
+- name: Enable and start OpenVPN server
+  systemd:
+    name: openvpn-server@server
+    enabled: yes
+    state: started

@@ -1,0 +1,17 @@
+apiVersion: k0s.k0sproject.io/v1beta1
+kind: Cluster
+metadata:
+  name: k0s-cluster
+
+spec:
+  api:
+    address: {{ k0s_api_address | default(ansible_host) }}
+    sans:
+      - {{ ansible_host }}
+      - 127.0.0.1
+
+  storage:
+    type: etcd
+
+  network:
+    provider: kuberouter

@@ -1,0 +1,15 @@
+[Unit]
+Description=Prometheus Kubernetes API proxy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=prometheus
+Group=prometheus
+ExecStart=/usr/local/bin/kubectl proxy --kubeconfig=/etc/prometheus/kubeconfig --address=127.0.0.1 --port=8001 --accept-hosts=^127\.0\.0\.1$ --disable-filter=true
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

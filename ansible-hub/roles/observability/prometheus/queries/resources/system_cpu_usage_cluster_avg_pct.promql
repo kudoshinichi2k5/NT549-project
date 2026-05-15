@@ -1,0 +1,1 @@
+100 - (avg(irate(node_cpu_seconds_total{mode="idle"}[15s])) * 100)

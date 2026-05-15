@@ -1,0 +1,52 @@
+# Metrics:
+# - http_server_requests_seconds_count
+# Meaning:
+# - Difference in service error rate versus 1 minute ago, in percentage points.
+# RL use-case:
+# - Reward delta signal indicating whether actions reduced service error rates.
+(
+  (
+    100 *
+    (
+      sum by (service) (
+        rate(http_server_requests_seconds_count{job="mini-ecommerce-actuator", uri!="/actuator/prometheus", status=~"5.."}[1m])
+      )
+      or on(service) (
+        0 * sum by (service) (
+          rate(http_server_requests_seconds_count{job="mini-ecommerce-actuator", uri!="/actuator/prometheus"}[1m])
+        )
+      )
+    )
+    /
+    clamp_min(
+      sum by (service) (
+        rate(http_server_requests_seconds_count{job="mini-ecommerce-actuator", uri!="/actuator/prometheus"}[1m])
+      ),
+      0.001
+    )
+  )
+  -
+  (
+    100 *
+    (
+      sum by (service) (
+        rate(http_server_requests_seconds_count{job="mini-ecommerce-actuator", uri!="/actuator/prometheus", status=~"5.."}[1m] offset 1m)
+      )
+      or on(service) (
+        0 * sum by (service) (
+          rate(http_server_requests_seconds_count{job="mini-ecommerce-actuator", uri!="/actuator/prometheus"}[1m] offset 1m)
+        )
+      )
+    )
+    /
+    clamp_min(
+      sum by (service) (
+        rate(http_server_requests_seconds_count{job="mini-ecommerce-actuator", uri!="/actuator/prometheus"}[1m] offset 1m)
+      ),
+      0.001
+    )
+  )
+)
+or on(service) (
+  0 * max by (service) (up{job="mini-ecommerce-actuator"})
+)

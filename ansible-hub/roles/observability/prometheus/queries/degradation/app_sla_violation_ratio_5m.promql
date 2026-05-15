@@ -1,0 +1,19 @@
+# Metrics:
+# - http_server_requests_seconds_bucket
+# Meaning:
+# - Fraction of 30s p95-latency windows in the last 5 minutes that breached 300ms.
+# RL use-case:
+# - SLA breach signal for state tracking and reward shaping during self-healing.
+avg_over_time(
+  (
+    histogram_quantile(
+      0.95,
+      sum by (service, le) (
+        rate(http_server_requests_seconds_bucket{job="mini-ecommerce-actuator",uri!="/actuator/prometheus"}[1m])
+      )
+    ) > bool 0.3
+  )[5m:30s]
+)
+or on(service) (
+  0 * max by (service) (up{job="mini-ecommerce-actuator"})
+)

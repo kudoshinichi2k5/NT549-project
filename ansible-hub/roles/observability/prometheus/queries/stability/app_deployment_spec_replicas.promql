@@ -1,0 +1,1 @@
+max by (deployment) (kube_deployment_spec_replicas{namespace="mini-ecommerce"})

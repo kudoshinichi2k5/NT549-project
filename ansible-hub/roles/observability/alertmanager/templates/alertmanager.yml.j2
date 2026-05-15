@@ -1,0 +1,30 @@
+# ============================================================
+# Alertmanager route/receiver config for Telegram notifications.
+# When Telegram vars are empty, keep a null receiver so service still starts.
+# ============================================================
+{% set tg_enabled = (telegram_bot_token | default('') | length > 0) and (telegram_chat_id | default('') | string | length > 0) %}
+route:
+  receiver: "{{ 'telegram' if tg_enabled else 'default_receiver' }}"
+  group_by: ['alertname', 'instance']
+  group_wait: 5s
+
+receivers:
+  - name: default_receiver
+{% if tg_enabled %}
+  - name: telegram
+    telegram_configs:
+      - bot_token: "{{ telegram_bot_token }}"
+        chat_id: {{ telegram_chat_id | int }}
+        parse_mode: Markdown
+        message: |
+{% raw %}
+          🚨 Kubernetes Alert
+
+          Alert: {{ .CommonLabels.alertname }}
+          Severity: {{ .CommonLabels.severity }}
+
+          {{ range .Alerts }}
+          {{ .Annotations.description }}
+          {{ end }}
+{% endraw %}
+{% endif %}

@@ -1,0 +1,37 @@
+- name: Ensure netfilter-persistent is installed
+  apt:
+    name: netfilter-persistent
+    state: present
+    update_cache: yes
+
+- name: Allow established and related traffic
+  iptables:
+    table: filter
+    chain: FORWARD
+    match: state
+    ctstate: ESTABLISHED,RELATED
+    jump: ACCEPT
+    state: present
+
+- name: Allow VPN clients to access the VPC
+  iptables:
+    table: filter
+    chain: FORWARD
+    in_interface: "{{ openvpn_tunnel_iface }}"
+    out_interface: "{{ openvpn_private_iface }}"
+    destination: "{{ vpc_network }}/{{ vpc_netmask }}"
+    jump: ACCEPT
+    state: present
+
+- name: Allow VPC resources to reach VPN clients
+  iptables:
+    table: filter
+    chain: FORWARD
+    in_interface: "{{ openvpn_private_iface }}"
+    out_interface: "{{ openvpn_tunnel_iface }}"
+    source: "{{ vpc_network }}/{{ vpc_netmask }}"
+    jump: ACCEPT
+    state: present
+
+- name: Save iptables rules
+  command: netfilter-persistent save

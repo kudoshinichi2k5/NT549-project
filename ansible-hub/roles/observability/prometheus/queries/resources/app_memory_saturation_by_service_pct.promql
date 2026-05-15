@@ -1,0 +1,36 @@
+# Metrics:
+# - jvm_memory_used_bytes
+# - kube_pod_container_resource_requests{resource="memory",unit="byte"}
+# Meaning:
+# - JVM memory usage as a percentage of requested memory budget for each service.
+# RL use-case:
+# - Memory pressure state signal while container-level working set and limits are unavailable.
+100 *
+(
+  sum by (service) (
+    jvm_memory_used_bytes{job="mini-ecommerce-actuator"}
+  )
+  /
+  clamp_min(
+    sum by (service) (
+      label_replace(
+        max by (pod, container) (
+          kube_pod_container_resource_requests{
+            namespace="mini-ecommerce",
+            resource="memory",
+            unit="byte",
+            container=~"api-gateway|order-service|payment-service|product-service"
+          }
+        ),
+        "service",
+        "$1",
+        "container",
+        "^(.*)$"
+      )
+    ),
+    1
+  )
+)
+or on(service) (
+  0 * max by (service) (up{job="mini-ecommerce-actuator"})
+)

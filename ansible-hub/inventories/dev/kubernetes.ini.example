@@ -1,0 +1,23 @@
+# =====================================================
+# Kubernetes (k0s) Inventory - Dev (KVM) (Example)
+# This file is an example inventory.
+# Actual inventory is generated automatically from
+# jenkins-kvm-hub Terraform inventory (k0s.ini).
+# =====================================================
+
+[k0s_controller]
+controller ansible_host=<K0S_CONTROLLER_PRIVATE_IP>
+
+[k0s_workers]
+worker-1 ansible_host=<K0S_WORKER_1_PRIVATE_IP>
+worker-2 ansible_host=<K0S_WORKER_2_PRIVATE_IP>
+
+[k0s_cluster:children]
+k0s_controller
+k0s_workers
+
+[all:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=<SSH_PRIVATE_KEY_PATH>
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+metallb_ip_pool_addresses=<METALLB_IP_RANGE>

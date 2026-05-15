@@ -1,0 +1,16 @@
+# Metrics:
+# - kube_pod_container_status_last_terminated_timestamp
+# - kube_pod_info
+# Meaning:
+# - Seconds elapsed since the last observed container termination for each pod.
+# RL use-case:
+# - Stability freshness signal for distinguishing recent failures from recovered pods.
+clamp_min(
+  time() - max by (namespace, pod) (
+    kube_pod_container_status_last_terminated_timestamp{namespace="mini-ecommerce"} > 0
+  ),
+  0
+)
+or on(namespace, pod) (
+  0 * max by (namespace, pod) (kube_pod_info{namespace="mini-ecommerce"})
+)

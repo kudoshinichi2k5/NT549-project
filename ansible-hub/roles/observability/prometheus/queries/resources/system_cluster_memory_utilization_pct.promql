@@ -1,0 +1,2 @@
+sum(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) /
+sum(node_memory_MemTotal_bytes) * 100

@@ -1,0 +1,48 @@
+---
+# ============================
+# PLAY 1: Cài đặt packages chung
+# ============================
+- hosts: all
+  become: true
+  roles:
+    - common
+
+# ============================
+# PLAY 2: Cài đặt k0s Controller
+# ============================
+- hosts: k0s_controller
+  become: true
+  tasks:
+    - name: Install k0s controller bootstrap
+      import_role:
+        name: k0s_controller
+        tasks_from: k0s_controller_setup.yml
+
+# ============================
+# PLAY 3: Cài đặt k0s Worker
+# ============================
+- hosts: k0s_workers
+  become: true
+  roles:
+    - k0s_worker
+
+# ============================
+# PLAY 4: Cài đặt ingress + RBAC sau khi worker đã join
+# ============================
+- hosts: k0s_controller
+  become: true
+  tasks:
+    - name: Install storage provisioner
+      import_role:
+        name: k0s_controller
+        tasks_from: install_storage.yml
+
+    - name: Install ingress-nginx controller
+      import_role:
+        name: k0s_controller
+        tasks_from: install_ingress.yml
+
+    - name: Configure RBAC for cluster addons
+      import_role:
+        name: k0s_controller
+        tasks_from: rbac.yml

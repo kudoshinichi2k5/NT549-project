@@ -1,0 +1,40 @@
+- name: Read CA certificate
+  slurp:
+    src: "{{ easy_rsa_dir }}/pki/ca.crt"
+  register: ca_crt_raw
+
+- name: Read client certificate
+  slurp:
+    src: "{{ easy_rsa_dir }}/pki/issued/{{ openvpn_client_name }}.crt"
+  register: client_crt_raw
+
+- name: Read client key
+  slurp:
+    src: "{{ easy_rsa_dir }}/pki/private/{{ openvpn_client_name }}.key"
+  register: client_key_raw
+
+- name: Generate devops.ovpn on VPN server
+  template:
+    src: client.ovpn.j2
+    dest: /home/ubuntu/{{ openvpn_client_name }}.ovpn
+  vars:
+    openvpn_public_ip: "{{ ansible_host }}"
+    ca_crt: "{{ ca_crt_raw.content | b64decode }}"
+    client_crt: "{{ client_crt_raw.content | b64decode }}"
+    client_key: "{{ client_key_raw.content | b64decode }}"
+
+- name: Ensure local VPN directory exists
+  delegate_to: localhost
+  run_once: true
+  become: false
+  file:
+    path: "{{ playbook_dir }}/../vpn"
+    state: directory
+    mode: "0755"
+
+
+- name: Fetch devops.ovpn to local machine
+  fetch:
+    src: /home/ubuntu/{{ openvpn_client_name }}.ovpn
+    dest: "{{ playbook_dir }}/../vpn/{{ openvpn_client_name }}.ovpn"
+    flat: yes

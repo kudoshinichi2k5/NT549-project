@@ -1,0 +1,15 @@
+---
+# Timezone cho toàn bộ node
+common_timezone: Asia/Ho_Chi_Minh
+
+# Package cơ bản cho k8s / k0s
+common_packages:
+  - curl
+  - wget
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  - apt-transport-https
+  - iptables
+  - socat
+  - conntrack

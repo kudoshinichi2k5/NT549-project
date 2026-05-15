@@ -1,0 +1,1 @@
+sum(irate(traces_spanmetrics_calls_total{status_code="STATUS_CODE_ERROR"}[15s])) or vector(0)

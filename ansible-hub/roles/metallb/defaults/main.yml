@@ -1,0 +1,12 @@
+---
+metallb_version: v0.14.5
+metallb_namespace: metallb-system
+metallb_controller_deployment: controller
+metallb_speaker_daemonset: speaker
+metallb_rollout_timeout_seconds: 180
+
+metallb_manifest_url: "https://raw.githubusercontent.com/metallb/metallb/{{ metallb_version }}/config/manifests/metallb-native.yaml"
+
+metallb_ip_pool_name: k0s-ip-pool
+metallb_l2_advertisement_name: k0s-l2-adv
+metallb_ip_pool_addresses: "192.168.201.240-192.168.201.250"

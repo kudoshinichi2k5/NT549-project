@@ -1,0 +1,193 @@
+# =========================
+# GRAFANA | INSTALL
+# =========================
+
+- name: Ensure keyrings directory exists
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+  tags: [grafana, grafana_install]
+
+- name: Download Grafana GPG key (ASCII)
+  get_url:
+    url: https://apt.grafana.com/gpg.key
+    dest: /tmp/grafana.gpg
+    mode: '0644'
+    force: yes
+  tags: [grafana, grafana_install]
+
+- name: Convert Grafana GPG key to keyring
+  command: >
+    gpg --dearmor -o /usr/share/keyrings/grafana.gpg /tmp/grafana.gpg
+  args:
+    creates: /usr/share/keyrings/grafana.gpg
+  tags: [grafana, grafana_install]
+
+- name: Add Grafana APT repository (signed-by keyring)
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/grafana.gpg] https://apt.grafana.com stable main"
+    filename: grafana
+    state: present
+  tags: [grafana, grafana_install]
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  tags: [grafana, grafana_install]
+
+- name: Install Grafana
+  apt:
+    name: grafana
+    state: present
+  tags: [grafana, grafana_install]
+
+# =========================
+# GRAFANA | RESET (STAGING)
+# =========================
+# NOTE:
+# - Grafana only applies admin_user/admin_password
+#   when database is initialized the FIRST time
+# - If grafana.db already exists, credentials in
+#   grafana.ini are ignored
+# => For staging: reset DB to re-apply admin/admin
+
+- name: Stop Grafana before resetting database
+  systemd:
+    name: grafana-server
+    state: stopped
+  tags: [grafana, grafana_reset]
+
+- name: Remove Grafana data directory (reset admin credentials)
+  file:
+    path: /var/lib/grafana
+    state: absent
+  tags: [grafana, grafana_reset]
+
+- name: Recreate Grafana data directory
+  file:
+    path: /var/lib/grafana
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: '0750'
+  tags: [grafana, grafana_reset]
+
+
+# =========================
+# GRAFANA | CONFIG
+# =========================
+
+- name: Deploy grafana.ini
+  template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+    mode: '0644'
+  tags: [grafana, grafana_config]
+
+
+# =========================
+# GRAFANA | DASHBOARDS
+# =========================
+
+- name: Ensure Grafana dashboard provisioning directory exists
+  file:
+    path: "{{ grafana_dashboard_provisioning_dir }}"
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: '0755'
+  tags: [grafana, grafana_dashboards]
+
+- name: Ensure Grafana dashboard storage directory exists
+  file:
+    path: "{{ grafana_dashboard_dir }}"
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: '0755'
+  tags: [grafana, grafana_dashboards]
+
+- name: Provision Grafana dashboards
+  template:
+    src: dashboards.yml.j2
+    dest: "{{ grafana_dashboard_provisioning_dir }}/kubernetes.yml"
+    owner: grafana
+    group: grafana
+    mode: '0644'
+  notify: Restart Grafana
+  tags: [grafana, grafana_dashboards]
+
+- name: Install Kubernetes dashboards
+  copy:
+    src: "dashboards/{{ item }}"
+    dest: "{{ grafana_dashboard_dir }}/{{ item }}"
+    owner: grafana
+    group: grafana
+    mode: '0644'
+  loop: "{{ grafana_metrics_dashboards }}"
+  notify: Restart Grafana
+  when: grafana_enable_metrics_dashboards
+  tags: [grafana, grafana_dashboards, dashboard_metrics]
+
+- name: Remove metrics dashboards when disabled
+  file:
+    path: "{{ grafana_dashboard_dir }}/{{ item }}"
+    state: absent
+  loop: "{{ grafana_metrics_dashboards }}"
+  notify: Restart Grafana
+  when: not grafana_enable_metrics_dashboards
+  tags: [grafana, grafana_dashboards, dashboard_metrics]
+
+- name: Install logging dashboards
+  copy:
+    src: "dashboards/{{ item }}"
+    dest: "{{ grafana_dashboard_dir }}/{{ item }}"
+    owner: grafana
+    group: grafana
+    mode: '0644'
+  loop: "{{ grafana_logging_dashboards }}"
+  notify: Restart Grafana
+  when: grafana_enable_logging_dashboards
+  tags: [grafana, grafana_dashboards, dashboard_logging]
+
+- name: Remove logging dashboards when disabled
+  file:
+    path: "{{ grafana_dashboard_dir }}/{{ item }}"
+    state: absent
+  loop: "{{ grafana_logging_dashboards }}"
+  notify: Restart Grafana
+  when: not grafana_enable_logging_dashboards
+  tags: [grafana, grafana_dashboards, dashboard_logging]
+
+- name: Install tracing dashboards
+  copy:
+    src: "dashboards/{{ item }}"
+    dest: "{{ grafana_dashboard_dir }}/{{ item }}"
+    owner: grafana
+    group: grafana
+    mode: '0644'
+  loop: "{{ grafana_tracing_dashboards }}"
+  notify: Restart Grafana
+  when: grafana_enable_tracing_dashboards
+  tags: [grafana, grafana_dashboards, dashboard_tracing]
+
+- name: Remove tracing dashboards when disabled
+  file:
+    path: "{{ grafana_dashboard_dir }}/{{ item }}"
+    state: absent
+  loop: "{{ grafana_tracing_dashboards }}"
+  notify: Restart Grafana
+  when: not grafana_enable_tracing_dashboards
+  tags: [grafana, grafana_dashboards, dashboard_tracing]
+
+# =========================
+# GRAFANA | SERVICE
+# =========================
+
+- name: Start Grafana
+  systemd:
+    name: grafana-server
+    enabled: yes
+    state: started
+  tags: [grafana, grafana_service]

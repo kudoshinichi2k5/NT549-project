@@ -1,0 +1,33 @@
+client
+dev tun
+proto udp
+
+remote {{ openvpn_public_ip }} {{ openvpn_port }}
+resolv-retry infinite
+nobind
+
+persist-key
+persist-tun
+
+pull
+route {{ vpc_network }} {{ vpc_netmask }}
+
+cipher AES-256-GCM
+remote-cert-tls server
+
+auth-nocache
+explicit-exit-notify 3
+
+verb 3
+
+<ca>
+{{ ca_crt }}
+</ca>
+
+<cert>
+{{ client_crt }}
+</cert>
+
+<key>
+{{ client_key }}
+</key>

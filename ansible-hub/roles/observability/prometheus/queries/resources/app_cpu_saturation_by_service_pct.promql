@@ -1,0 +1,36 @@
+# Metrics:
+# - process_cpu_usage
+# - kube_pod_container_resource_requests{resource="cpu",unit="core"}
+# Meaning:
+# - Aggregate process CPU usage as a percentage of requested CPU budget for each service.
+# RL use-case:
+# - Resource saturation state signal while container-level usage and limits are unavailable.
+100 *
+(
+  sum by (service) (
+    process_cpu_usage{job="mini-ecommerce-actuator"}
+  )
+  /
+  clamp_min(
+    sum by (service) (
+      label_replace(
+        max by (pod, container) (
+          kube_pod_container_resource_requests{
+            namespace="mini-ecommerce",
+            resource="cpu",
+            unit="core",
+            container=~"api-gateway|order-service|payment-service|product-service"
+          }
+        ),
+        "service",
+        "$1",
+        "container",
+        "^(.*)$"
+      )
+    ),
+    0.001
+  )
+)
+or on(service) (
+  0 * max by (service) (up{job="mini-ecommerce-actuator"})
+)

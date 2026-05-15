@@ -1,0 +1,170 @@
+# ============================================================
+# PROMETHEUS | INSTALL
+# ============================================================
+
+- name: Create prometheus user
+  user:
+    name: prometheus
+    system: yes
+    shell: /usr/sbin/nologin
+  tags: [prometheus, prometheus_install]
+
+- name: Create prometheus directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+  loop:
+    - /etc/prometheus
+    - /etc/prometheus/alerts
+    - /var/lib/prometheus
+  tags: [prometheus, prometheus_install]
+
+- name: Download Prometheus archive
+  get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: /tmp/prometheus.tar.gz
+    mode: '0644'
+  tags: [prometheus, prometheus_install]
+
+- name: Extract Prometheus archive
+  unarchive:
+    src: /tmp/prometheus.tar.gz
+    dest: /tmp
+    remote_src: yes
+  tags: [prometheus, prometheus_install]
+
+- name: Install Prometheus binaries
+  copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+    dest: /usr/local/bin/{{ item }}
+    owner: root
+    group: root
+    mode: '0755'
+    remote_src: yes
+  loop:
+    - prometheus
+    - promtool
+  tags: [prometheus, prometheus_install]
+
+# ============================================================
+# PROMETHEUS | KUBECONFIG (CRITICAL)
+# ============================================================
+
+- name: Install kubectl binary for API proxy scraping
+  get_url:
+    url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
+    dest: /usr/local/bin/kubectl
+    mode: '0755'
+  tags: [prometheus, prometheus_install]
+
+- name: Copy kubeconfig for Prometheus
+  copy:
+    src: /home/ubuntu/.kube/config
+    dest: /etc/prometheus/kubeconfig
+    owner: prometheus
+    group: prometheus
+    mode: '0600'
+    remote_src: yes
+  notify: Restart Prometheus
+  tags: [prometheus, prometheus_config]
+
+# ============================================================
+# PROMETHEUS | CONFIG
+# ============================================================
+
+- name: Initialize Prometheus scrape target facts
+  set_fact:
+    prometheus_tempo_targets: []
+    prometheus_kube_state_targets: []
+  tags: [prometheus, prometheus_config]
+
+- name: Prefer explicit Tempo host when provided
+  set_fact:
+    prometheus_tempo_targets: "{{ prometheus_tempo_targets + [tempo_host ~ ':3200'] }}"
+  when:
+    - tempo_host is defined
+    - (tempo_host | trim) != ''
+  tags: [prometheus, prometheus_config]
+
+- name: Fallback to logging node for Tempo metrics
+  set_fact:
+    prometheus_tempo_targets: "{{ prometheus_tempo_targets + [hostvars[groups['logging'][0]].ansible_host ~ ':3200'] }}"
+  when:
+    - prometheus_tempo_targets | length == 0
+    - (groups['logging'] | default([]) | length) > 0
+    - hostvars[groups['logging'][0]].ansible_host is defined
+  tags: [prometheus, prometheus_config]
+
+- name: Build kube-state-metrics targets from k0s inventory
+  set_fact:
+    prometheus_kube_state_targets: "{{ prometheus_kube_state_targets + [hostvars[item].ansible_host ~ ':30080'] }}"
+  loop: "{{ (groups['k0s_controller'] | default([])) + (groups['k0s_workers'] | default([])) }}"
+  when: hostvars[item].ansible_host is defined
+  tags: [prometheus, prometheus_config]
+
+- name: Deploy Prometheus configuration
+  template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+  notify: Restart Prometheus
+  tags: [prometheus, prometheus_config]
+
+- name: Deploy Prometheus systemd service
+  template:
+    src: prometheus.service.j2
+    dest: /etc/systemd/system/prometheus.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart Prometheus
+  tags: [prometheus, prometheus_config]
+
+- name: Deploy Prometheus kube proxy systemd service
+  template:
+    src: prometheus-kube-proxy.service.j2
+    dest: /etc/systemd/system/prometheus-kube-proxy.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart Prometheus kube proxy
+    - Restart Prometheus
+  tags: [prometheus, prometheus_config]
+
+- name: Copy Prometheus alert rules
+  # Keep alert rules as plain YAML and deploy them to Prometheus alerts dir.
+  copy:
+    src: "{{ role_path }}/alerts/system_alerts.yml"
+    dest: /etc/prometheus/alerts/system_alerts.yml
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+  notify: Restart Prometheus
+  tags: [prometheus, prometheus_config]
+
+# ============================================================
+# PROMETHEUS | SERVICE
+# ============================================================
+
+- name: Ensure Prometheus service is enabled and running
+  systemd:
+    name: prometheus
+    enabled: yes
+    state: started
+  tags: [prometheus, prometheus_service]
+
+- name: Ensure Prometheus kube proxy service is enabled and running
+  systemd:
+    name: prometheus-kube-proxy
+    enabled: yes
+    state: started
+  tags: [prometheus, prometheus_service]

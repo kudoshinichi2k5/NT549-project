@@ -1,0 +1,33 @@
+---
+- name: Kubeconfig | Ensure .kube directory exists on observability node
+  file:
+    path: /home/ubuntu/.kube
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0700'
+  tags: [kubeconfig]
+
+- name: Kubeconfig | Fetch kubeconfig from k0s controller
+  fetch:
+    src: /var/lib/k0s/pki/admin.conf
+    dest: /tmp/k0s-admin.conf
+    flat: yes
+  delegate_to: controller
+  tags: [kubeconfig]
+
+- name: Kubeconfig | Copy kubeconfig to observability node
+  copy:
+    src: /tmp/k0s-admin.conf
+    dest: /home/ubuntu/.kube/config
+    owner: ubuntu
+    group: ubuntu
+    mode: '0600'
+  tags: [kubeconfig]
+
+- name: Kubeconfig | Patch API server address for external access
+  replace:
+    path: /home/ubuntu/.kube/config
+    regexp: 'server: https://localhost:6443'
+    replace: "server: https://{{ hostvars['controller'].ansible_host }}:6443"
+  tags: [kubeconfig]

@@ -1,0 +1,51 @@
+---
+- name: Download k0s binary
+  get_url:
+    url: https://get.k0s.sh
+    dest: /tmp/install_k0s.sh
+    mode: '0755'
+
+- name: Install k0s
+  command: sh /tmp/install_k0s.sh
+  args:
+    creates: /usr/local/bin/k0s
+
+# =========================
+# PERSISTENT TOKEN STORAGE
+# =========================
+- name: Ensure /etc/k0s directory exists
+  file:
+    path: /etc/k0s
+    state: directory
+    mode: '0755'
+
+# =========================
+# COPY TOKEN TỪ CONTROLLER (IN-MEMORY)
+# =========================
+- name: Write worker token to node
+  copy:
+    content: "{{ hostvars[groups['k0s_controller'][0]].k0s_worker_token }}"
+    dest: /etc/k0s/k0s_worker.token
+    mode: '0600'
+
+- name: Check existing k0s worker unit
+  stat:
+    path: /etc/systemd/system/k0sworker.service
+  register: k0sworker_unit
+
+- name: Detect legacy token path in k0s worker unit
+  command: grep -q '/tmp/k0s_worker.token' /etc/systemd/system/k0sworker.service
+  register: k0sworker_unit_legacy
+  changed_when: false
+  failed_when: false
+
+- name: Install/update k0s worker with persistent token path
+  command: k0s install worker --force --token-file /etc/k0s/k0s_worker.token
+  when: (not k0sworker_unit.stat.exists) or (k0sworker_unit_legacy.rc == 0)
+
+- name: Start k0s worker
+  systemd:
+    name: k0sworker
+    enabled: yes
+    state: started
+    daemon_reload: yes

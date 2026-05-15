@@ -1,0 +1,3 @@
+sum by (namespace)
+(rate(http_server_requests_seconds_count{job="mini-ecommerce-actuator",uri!="/actuator/prometheus"}[30s])) or on(namespace)
+(0 * max by (namespace) (up{job="mini-ecommerce-actuator"}))

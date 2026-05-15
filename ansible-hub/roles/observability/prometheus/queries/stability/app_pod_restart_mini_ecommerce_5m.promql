@@ -1,0 +1,2 @@
+max by (pod)
+(increase(kube_pod_container_status_restarts_total{namespace="mini-ecommerce"}[5m]))

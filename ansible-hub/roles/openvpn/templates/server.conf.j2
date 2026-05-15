@@ -1,0 +1,26 @@
+port {{ openvpn_port }}
+proto {{ openvpn_proto }}
+dev tun
+
+ca ca.crt
+cert server.crt
+key server.key
+dh dh.pem
+
+topology subnet
+server {{ openvpn_network }} {{ openvpn_netmask }}
+
+push "route {{ vpc_network }} {{ vpc_netmask }}"
+
+client-to-client
+
+keepalive 10 120
+cipher AES-256-GCM
+persist-key
+persist-tun
+
+user nobody
+group nogroup
+
+status /var/log/openvpn/status.log
+verb 3

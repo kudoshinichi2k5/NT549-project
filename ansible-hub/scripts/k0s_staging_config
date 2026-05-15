@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+ANSIBLE_CONFIG_PATH="${SCRIPT_DIR}/../ansible.staging.cfg"
+REMOTE_KUBECONFIG_COMMAND="sudo k0s kubeconfig admin"
+KUBECONFIG_OUT="${HOME}/.kube/k0s-cloud-staging.yaml"
+CONTEXT_NAME="k0s-cloud-staging"
+
+cfg_value() {
+  local key="$1"
+  local file="$2"
+
+  awk -F '=' -v key="${key}" '
+    $1 ~ "^[[:space:]]*" key "[[:space:]]*$" {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
+      print $2
+      exit
+    }
+  ' "${file}"
+}
+
+resolve_path() {
+  local base_dir="$1"
+  local path_value="$2"
+
+  if [[ "${path_value}" = /* ]]; then
+    printf '%s\n' "${path_value}"
+  else
+    (cd -- "${base_dir}" && realpath "${path_value}")
+  fi
+}
+
+line_value() {
+  local line="$1"
+  local key="$2"
+
+  grep -o "${key}=[^ ]*" <<< "${line}" | cut -d= -f2 || true
+}
+
+controller_entry() {
+  local inventory_path="$1"
+
+  awk '
+    /^\[k0s_controller\]/ { in_controller = 1; next }
+    /^\[/ { in_controller = 0 }
+    in_controller && NF && $1 !~ /^#/ { print; exit }
+  ' "${inventory_path}"
+}
+
+if [[ ! -f "${ANSIBLE_CONFIG_PATH}" ]]; then
+  echo "Ansible config file not found: ${ANSIBLE_CONFIG_PATH}" >&2
+  exit 1
+fi
+
+ANSIBLE_DIR="$(cd -- "$(dirname -- "${ANSIBLE_CONFIG_PATH}")" && pwd)"
+INVENTORY_PATH="$(resolve_path "${ANSIBLE_DIR}" "$(cfg_value inventory "${ANSIBLE_CONFIG_PATH}")")"
+SSH_KEY_PATH="$(resolve_path "${ANSIBLE_DIR}" "$(cfg_value private_key_file "${ANSIBLE_CONFIG_PATH}")")"
+
+if [[ ! -f "${INVENTORY_PATH}" ]]; then
+  echo "Inventory file not found: ${INVENTORY_PATH}" >&2
+  exit 1
+fi
+
+if [[ ! -f "${SSH_KEY_PATH}" ]]; then
+  echo "SSH key not found: ${SSH_KEY_PATH}" >&2
+  exit 1
+fi
+
+CONTROLLER_LINE="$(controller_entry "${INVENTORY_PATH}")"
+
+if [[ -z "${CONTROLLER_LINE}" ]]; then
+  echo "Could not find a controller entry in ${INVENTORY_PATH}" >&2
+  exit 1
+fi
+
+CONTROLLER_NAME="$(awk '{print $1}' <<< "${CONTROLLER_LINE}")"
+CONTROLLER_IP="$(line_value "${CONTROLLER_LINE}" ansible_host)"
+SSH_USER="$(line_value "${CONTROLLER_LINE}" ansible_user)"
+SSH_USER="${SSH_USER:-$(cfg_value remote_user "${ANSIBLE_CONFIG_PATH}")}"
+SSH_USER="${SSH_USER:-ubuntu}"
+
+if [[ -z "${CONTROLLER_IP}" ]]; then
+  echo "Could not parse ansible_host from ${INVENTORY_PATH}" >&2
+  exit 1
+fi
+
+mkdir -p "$(dirname -- "${KUBECONFIG_OUT}")"
+
+tmp_kubeconfig="$(mktemp)"
+trap 'rm -f "${tmp_kubeconfig}"' EXIT
+
+echo "Using controller '${CONTROLLER_NAME}' at ${CONTROLLER_IP}"
+echo "Fetching kubeconfig from ${SSH_USER}@${CONTROLLER_IP}..."
+
+ssh \
+  -o ConnectTimeout=5 \
+  -o StrictHostKeyChecking=accept-new \
+  -i "${SSH_KEY_PATH}" \
+  "${SSH_USER}@${CONTROLLER_IP}" \
+  "${REMOTE_KUBECONFIG_COMMAND}" \
+  > "${tmp_kubeconfig}"
+
+sed \
+  -e "s#server: https://localhost:6443#server: https://${CONTROLLER_IP}:6443#" \
+  -e "s#server: https://127.0.0.1:6443#server: https://${CONTROLLER_IP}:6443#" \
+  "${tmp_kubeconfig}" > "${KUBECONFIG_OUT}"
+
+chmod 600 "${KUBECONFIG_OUT}"
+
+if command -v kubectl >/dev/null 2>&1; then
+  current_context="$(kubectl --kubeconfig "${KUBECONFIG_OUT}" config current-context 2>/dev/null || true)"
+  if [[ -n "${current_context}" && "${current_context}" != "${CONTEXT_NAME}" ]]; then
+    kubectl --kubeconfig "${KUBECONFIG_OUT}" config rename-context "${current_context}" "${CONTEXT_NAME}" >/dev/null
+  fi
+fi
+
+echo "Kubeconfig written to: ${KUBECONFIG_OUT}"
+echo "Use it with:"
+echo "  export KUBECONFIG=${KUBECONFIG_OUT}"
+
+if command -v kubectl >/dev/null 2>&1; then
+  echo
+  echo "Cluster check:"
+  kubectl --kubeconfig "${KUBECONFIG_OUT}" get nodes -o wide
+fi

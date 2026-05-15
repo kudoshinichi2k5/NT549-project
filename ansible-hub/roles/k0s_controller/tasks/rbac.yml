@@ -1,0 +1,17 @@
+- name: Copy RBAC manifests to controller
+  copy:
+    src: "{{ item }}"
+    dest: "/tmp/{{ item | basename }}"
+    mode: '0644'
+  loop:
+    - rbac/external-prometheus-rbac.yaml
+    - rbac/external-prometheus-binding.yaml
+  when: inventory_hostname in groups['k0s_controller']
+
+- name: Apply RBAC for external Prometheus
+  command: >
+    k0s kubectl apply -f /tmp/{{ item | basename }}
+  loop:
+    - rbac/external-prometheus-rbac.yaml
+    - rbac/external-prometheus-binding.yaml
+  when: inventory_hostname in groups['k0s_controller']

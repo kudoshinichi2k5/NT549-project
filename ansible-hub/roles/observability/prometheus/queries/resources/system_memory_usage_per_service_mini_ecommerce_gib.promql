@@ -1,0 +1,7 @@
+(
+  sum by (service) (
+    jvm_memory_used_bytes{job="mini-ecommerce-actuator"}
+  )
+  / (1024^3)
+)
+or on(service) (0 * max by (service) (up{job="mini-ecommerce-actuator"}))

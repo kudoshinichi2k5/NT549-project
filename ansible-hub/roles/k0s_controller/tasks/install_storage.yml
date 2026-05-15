@@ -1,0 +1,35 @@
+- name: Install local-path provisioner
+  become: true
+  command:
+    argv:
+      - k0s
+      - kubectl
+      - apply
+      - -f
+      - https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
+  register: local_path_apply
+  retries: 10
+  delay: 15
+  until: local_path_apply.rc == 0
+  changed_when: local_path_apply.stdout is search('created') or local_path_apply.stdout is search('configured')
+  tags:
+    - storage
+
+- name: Mark local-path as default StorageClass
+  become: true
+  command:
+    argv:
+      - k0s
+      - kubectl
+      - patch
+      - storageclass
+      - local-path
+      - -p
+      - '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+  register: local_path_default_patch
+  retries: 10
+  delay: 15
+  until: local_path_default_patch.rc == 0
+  changed_when: local_path_default_patch.stdout is search('patched')
+  tags:
+    - storage

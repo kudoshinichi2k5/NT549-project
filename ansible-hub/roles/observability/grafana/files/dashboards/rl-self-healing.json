@@ -1,0 +1,735 @@
+{
+  "uid": "rl-self-healing",
+  "title": "RL Self-Healing Observability",
+  "tags": [
+    "prometheus",
+    "kubernetes",
+    "rl",
+    "aiops"
+  ],
+  "schemaVersion": 37,
+  "version": 1,
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 4000,
+      "type": "row",
+      "title": "RL SELF-HEALING OBSERVABILITY",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 4005,
+      "type": "row",
+      "title": "WORKLOAD",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 4001,
+      "type": "timeseries",
+      "title": "Request Rate by Service",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 2,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (service) (rate(http_server_requests_seconds_count{job=\"mini-ecommerce-actuator\",uri!=\"/actuator/prometheus\"}[30s]))\nor on(service) (0 * max by (service) (up{job=\"mini-ecommerce-actuator\"}))",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4002,
+      "type": "timeseries",
+      "title": "Request per Replica by Service",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 12,
+        "y": 2,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "# Metrics:\n# - http_server_requests_seconds_count\n# - kube_deployment_spec_replicas\n# Meaning:\n# - Effective request pressure handled by the desired replica budget of each service.\n# RL use-case:\n# - Workload pressure feature aligned with the `replicas` state signal.\n(\n  sum by (service) (\n    rate(http_server_requests_seconds_count{job=\"mini-ecommerce-actuator\",uri!=\"/actuator/prometheus\"}[30s])\n  )\n  /\n  clamp_min(\n    max by (service) (\n      label_replace(\n        kube_deployment_spec_replicas{namespace=\"mini-ecommerce\", deployment!=\"\"},\n        \"service\",\n        \"$1\",\n        \"deployment\",\n        \"^(.*)$\"\n      )\n    ),\n    1\n  )\n)\nor on(service) (\n  0 * max by (service) (up{job=\"mini-ecommerce-actuator\"})\n)",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4015,
+      "type": "row",
+      "title": "DEGRADATION",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 4010,
+      "type": "timeseries",
+      "title": "Error Rate by Service",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "(\n  100 *\n  (\n    sum by (service) (\n      rate(http_server_requests_seconds_count{job=\"mini-ecommerce-actuator\",uri!=\"/actuator/prometheus\",status=~\"5..\"}[1m])\n    )\n    or on(service) (\n      0 * sum by (service) (\n        rate(http_server_requests_seconds_count{job=\"mini-ecommerce-actuator\",uri!=\"/actuator/prometheus\"}[1m])\n      )\n    )\n  )\n  / clamp_min(\n    sum by (service) (\n      rate(http_server_requests_seconds_count{job=\"mini-ecommerce-actuator\",uri!=\"/actuator/prometheus\"}[1m])\n    ),\n    0.001\n  )\n)\nor on(service) (0 * max by (service) (up{job=\"mini-ecommerce-actuator\"}))",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4011,
+      "type": "timeseries",
+      "title": "Latency P95 by Service",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 8,
+        "y": 11,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(\n  0.95,\n  sum by (service, le) (\n    rate(http_server_requests_seconds_bucket{job=\"mini-ecommerce-actuator\",uri!=\"/actuator/prometheus\"}[1m])\n  )\n) * 1000\nor on(service) (\n  0 * max by (service) (up{job=\"mini-ecommerce-actuator\"})\n)",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4012,
+      "type": "timeseries",
+      "title": "SLA Violation Ratio (5m, P95 > 300ms)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 16,
+        "y": 11,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "# Metrics:\n# - http_server_requests_seconds_bucket\n# Meaning:\n# - Fraction of 30s p95-latency windows in the last 5 minutes that breached 300ms.\n# RL use-case:\n# - SLA breach signal for state tracking and reward shaping during self-healing.\navg_over_time(\n  (\n    histogram_quantile(\n      0.95,\n      sum by (service, le) (\n        rate(http_server_requests_seconds_bucket{job=\"mini-ecommerce-actuator\",uri!=\"/actuator/prometheus\"}[1m])\n      )\n    ) > bool 0.3\n  )[5m:30s]\n)\nor on(service) (\n  0 * max by (service) (up{job=\"mini-ecommerce-actuator\"})\n)",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4013,
+      "type": "timeseries",
+      "title": "Latency Delta (1m, P95) by Service",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 19,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "# Metrics:\n# - http_server_requests_seconds_bucket\n# Meaning:\n# - Change in p95 latency versus 1 minute ago, expressed in milliseconds.\n# RL use-case:\n# - Reward delta signal showing whether recovery actions are improving latency.\n(\n  (\n    histogram_quantile(\n      0.95,\n      sum by (service, le) (\n        rate(http_server_requests_seconds_bucket{job=\"mini-ecommerce-actuator\",uri!=\"/actuator/prometheus\"}[1m])\n      )\n    )\n  )\n  -\n  (\n    histogram_quantile(\n      0.95,\n      sum by (service, le) (\n        rate(http_server_requests_seconds_bucket{job=\"mini-ecommerce-actuator\",uri!=\"/actuator/prometheus\"}[1m] offset 1m)\n      )\n    )\n  )\n) * 1000\nor on(service) (\n  0 * max by (service) (up{job=\"mini-ecommerce-actuator\"})\n)",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4014,
+      "type": "timeseries",
+      "title": "Error Delta (1m) by Service",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 12,
+        "y": 19,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "# Metrics:\n# - http_server_requests_seconds_count\n# Meaning:\n# - Difference in service error rate versus 1 minute ago, in percentage points.\n# RL use-case:\n# - Reward delta signal indicating whether actions reduced service error rates.\n(\n  (\n    100 *\n    (\n      sum by (service) (\n        rate(http_server_requests_seconds_count{job=\"mini-ecommerce-actuator\", uri!=\"/actuator/prometheus\", status=~\"5..\"}[1m])\n      )\n      or on(service) (\n        0 * sum by (service) (\n          rate(http_server_requests_seconds_count{job=\"mini-ecommerce-actuator\", uri!=\"/actuator/prometheus\"}[1m])\n        )\n      )\n    )\n    /\n    clamp_min(\n      sum by (service) (\n        rate(http_server_requests_seconds_count{job=\"mini-ecommerce-actuator\", uri!=\"/actuator/prometheus\"}[1m])\n      ),\n      0.001\n    )\n  )\n  -\n  (\n    100 *\n    (\n      sum by (service) (\n        rate(http_server_requests_seconds_count{job=\"mini-ecommerce-actuator\", uri!=\"/actuator/prometheus\", status=~\"5..\"}[1m] offset 1m)\n      )\n      or on(service) (\n        0 * sum by (service) (\n          rate(http_server_requests_seconds_count{job=\"mini-ecommerce-actuator\", uri!=\"/actuator/prometheus\"}[1m] offset 1m)\n        )\n      )\n    )\n    /\n    clamp_min(\n      sum by (service) (\n        rate(http_server_requests_seconds_count{job=\"mini-ecommerce-actuator\", uri!=\"/actuator/prometheus\"}[1m] offset 1m)\n      ),\n      0.001\n    )\n  )\n)\nor on(service) (\n  0 * max by (service) (up{job=\"mini-ecommerce-actuator\"})\n)",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4025,
+      "type": "row",
+      "title": "RESOURCE",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 4020,
+      "type": "timeseries",
+      "title": "CPU Usage by Service",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "100 * avg by (service) (process_cpu_usage{job=\"mini-ecommerce-actuator\"})",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4021,
+      "type": "timeseries",
+      "title": "Memory Usage by Service",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 12,
+        "y": 28,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (service) (jvm_memory_used_bytes{job=\"mini-ecommerce-actuator\"})",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4022,
+      "type": "timeseries",
+      "title": "CPU Saturation by Service (vs Requests)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "# Metrics:\n# - process_cpu_usage\n# - kube_pod_container_resource_requests{resource=\"cpu\",unit=\"core\"}\n# Meaning:\n# - Aggregate process CPU usage as a percentage of requested CPU budget for each service.\n# RL use-case:\n# - Resource saturation state signal while container-level usage and limits are unavailable.\n100 *\n(\n  sum by (service) (\n    process_cpu_usage{job=\"mini-ecommerce-actuator\"}\n  )\n  /\n  clamp_min(\n    sum by (service) (\n      label_replace(\n        max by (pod, container) (\n          kube_pod_container_resource_requests{\n            namespace=\"mini-ecommerce\",\n            resource=\"cpu\",\n            unit=\"core\",\n            container=~\"api-gateway|order-service|payment-service|product-service\"\n          }\n        ),\n        \"service\",\n        \"$1\",\n        \"container\",\n        \"^(.*)$\"\n      )\n    ),\n    0.001\n  )\n)\nor on(service) (\n  0 * max by (service) (up{job=\"mini-ecommerce-actuator\"})\n)",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4023,
+      "type": "timeseries",
+      "title": "Memory Saturation by Service (vs Requests)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 12,
+        "y": 36,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "# Metrics:\n# - jvm_memory_used_bytes\n# - kube_pod_container_resource_requests{resource=\"memory\",unit=\"byte\"}\n# Meaning:\n# - JVM memory usage as a percentage of requested memory budget for each service.\n# RL use-case:\n# - Memory pressure state signal while container-level working set and limits are unavailable.\n100 *\n(\n  sum by (service) (\n    jvm_memory_used_bytes{job=\"mini-ecommerce-actuator\"}\n  )\n  /\n  clamp_min(\n    sum by (service) (\n      label_replace(\n        max by (pod, container) (\n          kube_pod_container_resource_requests{\n            namespace=\"mini-ecommerce\",\n            resource=\"memory\",\n            unit=\"byte\",\n            container=~\"api-gateway|order-service|payment-service|product-service\"\n          }\n        ),\n        \"service\",\n        \"$1\",\n        \"container\",\n        \"^(.*)$\"\n      )\n    ),\n    1\n  )\n)\nor on(service) (\n  0 * max by (service) (up{job=\"mini-ecommerce-actuator\"})\n)",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4035,
+      "type": "row",
+      "title": "STABILITY",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 44,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 4030,
+      "type": "timeseries",
+      "title": "Pod Restart (5m) by Pod",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 45,
+        "w": 6,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "max by (pod)\n(increase(kube_pod_container_status_restarts_total{namespace=\"mini-ecommerce\"}[5m]))",
+          "refId": "A",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4031,
+      "type": "timeseries",
+      "title": "Pod Churn (5m) by Service",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 6,
+        "y": 45,
+        "w": 6,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "# Metrics:\n# - kube_pod_created\n# Meaning:\n# - Number of pods created in the last 5 minutes for each service.\n# RL use-case:\n# - Stability signal to capture rollout storms, rescheduling churn, and self-healing side effects.\nsum by (service) (\n  label_replace(\n    max by (pod) ((time() - kube_pod_created{namespace=\"mini-ecommerce\", pod=~\".+-[a-f0-9]{8,10}-[a-z0-9]{5}\"} < bool 300)),\n    \"service\",\n    \"$1\",\n    \"pod\",\n    \"^(.*)-[a-f0-9]{8,10}-[a-z0-9]{5}$\"\n  )\n  or\n  label_replace(\n    max by (pod) ((time() - kube_pod_created{namespace=\"mini-ecommerce\", pod=~\".+-[0-9]+\"} < bool 300)),\n    \"service\",\n    \"$1\",\n    \"pod\",\n    \"^(.*)-[0-9]+$\"\n  )\n)\nor on(service) (\n  0 * max by (service) (up{job=\"mini-ecommerce-actuator\"})\n)",
+          "refId": "A",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4032,
+      "type": "timeseries",
+      "title": "Replicas Desired vs Available",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 12,
+        "y": 45,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "max by (deployment) (kube_deployment_spec_replicas{namespace=\"mini-ecommerce\"})",
+          "refId": "A",
+          "legendFormat": "{{deployment}} desired"
+        },
+        {
+          "expr": "max by (deployment) (kube_deployment_status_replicas_available{namespace=\"mini-ecommerce\"})",
+          "refId": "B",
+          "legendFormat": "{{deployment}} available"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4033,
+      "type": "timeseries",
+      "title": "Time Since Last Restart by Pod",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 53,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "# Metrics:\n# - kube_pod_container_status_last_terminated_timestamp\n# - kube_pod_info\n# Meaning:\n# - Seconds elapsed since the last observed container termination for each pod.\n# RL use-case:\n# - Stability freshness signal for distinguishing recent failures from recovered pods.\nclamp_min(\n  time() - max by (namespace, pod) (\n    kube_pod_container_status_last_terminated_timestamp{namespace=\"mini-ecommerce\"} > 0\n  ),\n  0\n)\nor on(namespace, pod) (\n  0 * max by (namespace, pod) (kube_pod_info{namespace=\"mini-ecommerce\"})\n)",
+          "refId": "A",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    }
+  ]
+}

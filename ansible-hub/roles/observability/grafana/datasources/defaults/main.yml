@@ -1,0 +1,6 @@
+# Default Grafana provisioning directory
+grafana_provisioning_dir: /etc/grafana/provisioning/datasources
+
+grafana_enable_prometheus_datasource: true
+grafana_enable_loki_datasource: true
+grafana_enable_tempo_datasource: true

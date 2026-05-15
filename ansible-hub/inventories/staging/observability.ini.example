@@ -1,0 +1,13 @@
+# =====================================================
+# Observability Inventory - Staging (Example)
+# Nodes for Prometheus, Grafana, Loki, Tempo
+# =====================================================
+
+[monitoring]
+obser-1 ansible_host=<OBSERVABILITY_MONITORING_PRIVATE_IP> ansible_user=ubuntu ansible_ssh_private_key_file=<SSH_PRIVATE_KEY_PATH>
+
+[logging]
+obser-2 ansible_host=<OBSERVABILITY_LOGGING_PRIVATE_IP> ansible_user=ubuntu ansible_ssh_private_key_file=<SSH_PRIVATE_KEY_PATH>
+
+[all:vars]
+loki_host=<LOKI_PRIVATE_IP>

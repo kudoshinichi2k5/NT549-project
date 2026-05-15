@@ -1,0 +1,60 @@
+- name: Monitoring | Prometheus and Grafana node
+  hosts: monitoring
+  become: true
+  tags:
+    - monitoring
+    - monitoring-node
+  roles:
+    - role: common
+      tags:
+        - common
+        - monitoring
+
+    - role: kubeconfig
+      tags:
+        - kubeconfig
+        - monitoring
+
+    - role: helm
+      tags:
+        - helm
+        - monitoring
+
+    - role: observability/alertmanager
+      tags:
+        - monitoring
+        - alertmanager
+
+    - role: observability/prometheus
+      tags:
+        - monitoring
+        - prometheus
+
+    - role: observability/grafana
+      vars:
+        grafana_enable_metrics_dashboards: true
+        grafana_enable_logging_dashboards: false
+        grafana_enable_tracing_dashboards: false
+      tags:
+        - monitoring
+        - grafana
+
+    - role: observability/grafana/datasources
+      vars:
+        grafana_enable_prometheus_datasource: true
+        grafana_enable_loki_datasource: false
+        grafana_enable_tempo_datasource: false
+      tags:
+        - monitoring
+        - grafana
+        - grafana_datasource
+
+    - role: observability/kube_state_metrics
+      tags:
+        - monitoring
+        - kube-state-metrics
+
+    - role: observability/node_exporter
+      tags:
+        - monitoring
+        - node-exporter

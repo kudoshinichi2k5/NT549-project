@@ -1,0 +1,91 @@
+---
+- name: Install required packages for Loki
+  apt:
+    name:
+      - unzip
+    state: present
+    update_cache: true
+
+- name: Create loki user
+  user:
+    name: loki
+    system: true
+    shell: /sbin/nologin
+    create_home: false
+
+- name: Create Loki directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: loki
+    group: loki
+    mode: "0755"
+  loop:
+    - /etc/loki
+    - /var/lib/loki
+    - /var/lib/loki/chunks
+    - /var/lib/loki/rules
+    - /opt/loki
+
+- name: Download Loki binary
+  get_url:
+    url: https://github.com/grafana/loki/releases/download/v2.9.4/loki-linux-amd64.zip
+    dest: /tmp/loki.zip
+    mode: "0644"
+
+- name: Unzip Loki binary
+  unarchive:
+    src: /tmp/loki.zip
+    dest: /opt/loki
+    remote_src: true
+    creates: /opt/loki/loki-linux-amd64
+
+- name: Install Loki binary
+  copy:
+    src: /opt/loki/loki-linux-amd64
+    dest: /usr/local/bin/loki
+    owner: root
+    group: root
+    mode: "0755"
+    remote_src: true
+  notify: Restart Loki
+
+- name: Render Loki config
+  template:
+    src: loki.yaml.j2
+    dest: /etc/loki/loki.yaml
+    owner: loki
+    group: loki
+    mode: "0644"
+  notify: Restart Loki
+
+- name: Create systemd service for Loki
+  copy:
+    dest: /etc/systemd/system/loki.service
+    content: |
+      [Unit]
+      Description=Loki Log Aggregation System
+      After=network.target
+
+      [Service]
+      User=loki
+      Group=loki
+      WorkingDirectory=/var/lib/loki
+      ExecStart=/usr/local/bin/loki -config.file=/etc/loki/loki.yaml
+      Restart=always
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+  notify:
+    - Reload systemd daemon
+    - Restart Loki
+
+- name: Enable and start Loki
+  systemd:
+    name: loki
+    enabled: true
+    state: started
+
+- name: Flush handlers to apply Loki changes immediately
+  meta: flush_handlers

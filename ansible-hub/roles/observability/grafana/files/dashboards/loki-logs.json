@@ -1,0 +1,815 @@
+{
+  "uid": "loki-logs",
+  "title": "Loki - System & Application Logs",
+  "tags": [
+    "loki",
+    "kubernetes",
+    "logs"
+  ],
+  "schemaVersion": 37,
+  "version": 12,
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1001,
+      "type": "row",
+      "title": "SYSTEM LOGGING",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "System Total Logs",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"}[$__range]))",
+          "refId": "A",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Total System Error Logs",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 8,
+        "y": 1,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "((sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\", level=\"ERROR\"}[$__range]))) or (sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"} |~ \"(?i)(error|exception|failed|panic)\" [$__range]))) or vector(0))",
+          "refId": "A",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "datasource": "Loki",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          }
+        },
+        "overrides": []
+      },
+      "id": 11,
+      "title": "System Error %",
+      "targets": [
+        {
+          "expr": "(((sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\", level=\"ERROR\"}[$__range]))) or (sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"} |~ \"(?i)(error|exception|failed|panic)\" [$__range]))) or vector(0)) / (sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"}[$__range])) + 1e-9)) * 100",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 16,
+        "y": 1,
+        "w": 8,
+        "h": 4
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "System Log Volume (by Level)",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "((sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\", level=\"ERROR\"}[$__interval]))) or (sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"} |~ \"(?i)(error|exception|failed|panic)\" [$__interval]))) or vector(0))",
+          "refId": "A",
+          "legendFormat": "ERROR"
+        },
+        {
+          "expr": "sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"} |~ \"(?i)(warn|warning)\" [$__interval]))",
+          "refId": "B",
+          "legendFormat": "WARN"
+        },
+        {
+          "expr": "sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"} !~ \"(?i)(error|exception|failed|panic|warn|warning)\" [$__interval]))",
+          "refId": "C",
+          "legendFormat": "INFO"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Logs by Component (System)",
+      "datasource": "Loki",
+      "targets": [
+        {
+          "expr": "sum by (container) (count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"}[$__interval]))",
+          "refId": "A",
+          "legendFormat": "{{container}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 12,
+        "h": 6
+      }
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Top 5 System Errors",
+      "datasource": "Loki",
+      "targets": [
+        {
+          "expr": "topk(5, sum by (pod, container) (count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\", level=\"ERROR\"}[1h]))) or topk(5, sum by (pod, container) (count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"} |~ \"(?i)(error|exception|failed|panic)\" [1h])))",
+          "refId": "A",
+          "legendFormat": "{{pod}}/{{container}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 10,
+        "w": 12,
+        "h": 6
+      }
+    },
+    {
+      "id": 17,
+      "type": "timeseries",
+      "title": "System Error Rate (5m)",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "((sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\", level=\"ERROR\"}[5m]))) or (sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"} |~ \"(?i)(error|exception|failed|panic)\" [5m]))) or vector(0))",
+          "refId": "A",
+          "legendFormat": "SYSTEM"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "type": "timeseries",
+      "title": "Error Correlation (System vs Application)",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "((sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\", level=\"ERROR\"}[5m]))) or (sum(count_over_time({namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"} |~ \"(?i)(error|exception|failed|panic)\" [5m]))) or vector(0))",
+          "refId": "A",
+          "legendFormat": "SYSTEM"
+        },
+        {
+          "expr": "((sum(count_over_time({namespace=\"mini-ecommerce\", level=\"ERROR\"}[5m]))) or (sum(count_over_time({namespace=\"mini-ecommerce\"} |~ \"(?i)(error|exception|failed|panic)\" [5m]))) or vector(0))",
+          "refId": "B",
+          "legendFormat": "APPLICATION"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "logs",
+      "title": "System Logs",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "{namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"}",
+          "refId": "A",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false
+      }
+    },
+    {
+      "id": 5,
+      "type": "logs",
+      "title": "System Error Logs",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 12,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "{namespace=~\"kube-system|monitoring|kube-public|kube-node-lease\"} |~ \"(?i)(error|exception|failed|panic)\"",
+          "refId": "A",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false
+      }
+    },
+    {
+      "id": 1002,
+      "type": "row",
+      "title": "APPLICATION LOGGING",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Application Total Logs (mini-ecommerce)",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 0,
+        "y": 29,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({namespace=\"mini-ecommerce\"}[$__range]))",
+          "refId": "A",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Total Application Error Logs (mini-ecommerce)",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 8,
+        "y": 29,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "((sum(count_over_time({namespace=\"mini-ecommerce\", level=\"ERROR\"}[$__range]))) or (sum(count_over_time({namespace=\"mini-ecommerce\"} |~ \"(?i)(error|exception|failed|panic)\" [$__range]))) or vector(0))",
+          "refId": "A",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "datasource": "Loki",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          }
+        },
+        "overrides": []
+      },
+      "id": 12,
+      "title": "Application Error %",
+      "targets": [
+        {
+          "expr": "(((sum(count_over_time({namespace=\"mini-ecommerce\", level=\"ERROR\"}[$__range]))) or (sum(count_over_time({namespace=\"mini-ecommerce\"} |~ \"(?i)(error|exception|failed|panic)\" [$__range]))) or vector(0)) / (sum(count_over_time({namespace=\"mini-ecommerce\"}[$__range])) + 1e-9)) * 100",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 16,
+        "y": 29,
+        "w": 8,
+        "h": 4
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Application Log Volume (by Level)",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 0,
+        "y": 33,
+        "w": 24,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "((sum(count_over_time({namespace=\"mini-ecommerce\", level=\"ERROR\"}[$__interval]))) or (sum(count_over_time({namespace=\"mini-ecommerce\"} |~ \"(?i)(error|exception|failed|panic)\" [$__interval]))) or vector(0))",
+          "refId": "A",
+          "legendFormat": "ERROR"
+        },
+        {
+          "expr": "sum(count_over_time({namespace=\"mini-ecommerce\"} |~ \"(?i)(warn|warning)\" [$__interval]))",
+          "refId": "B",
+          "legendFormat": "WARN"
+        },
+        {
+          "expr": "sum(count_over_time({namespace=\"mini-ecommerce\"} !~ \"(?i)(error|exception|failed|panic|warn|warning)\" [$__interval]))",
+          "refId": "C",
+          "legendFormat": "INFO"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Logs by Service (Application)",
+      "datasource": "Loki",
+      "targets": [
+        {
+          "expr": "sum by (app) (count_over_time({namespace=\"mini-ecommerce\"}[$__interval]))",
+          "refId": "A",
+          "legendFormat": "{{app}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 38,
+        "w": 12,
+        "h": 6
+      }
+    },
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "Top 5 Application Errors",
+      "datasource": "Loki",
+      "targets": [
+        {
+          "expr": "topk(5, sum by (pod, container) (count_over_time({namespace=\"mini-ecommerce\", level=\"ERROR\"}[1h]))) or topk(5, sum by (pod, container) (count_over_time({namespace=\"mini-ecommerce\"} |~ \"(?i)(error|exception|failed|panic)\" [1h])))",
+          "refId": "A",
+          "legendFormat": "{{pod}}/{{container}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 38,
+        "w": 12,
+        "h": 6
+      }
+    },
+    {
+      "id": 18,
+      "type": "timeseries",
+      "title": "Application Error Rate (5m)",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 0,
+        "y": 44,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "((sum(count_over_time({namespace=\"mini-ecommerce\", level=\"ERROR\"}[5m]))) or (sum(count_over_time({namespace=\"mini-ecommerce\"} |~ \"(?i)(error|exception|failed|panic)\" [5m]))) or vector(0))",
+          "refId": "A",
+          "legendFormat": "APPLICATION"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "logs",
+      "title": "Application Logs (mini-ecommerce)",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 0,
+        "y": 48,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "{namespace=\"mini-ecommerce\"}",
+          "refId": "A",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false
+      }
+    },
+    {
+      "id": 10,
+      "type": "logs",
+      "title": "Application Error Logs (mini-ecommerce)",
+      "datasource": "Loki",
+      "gridPos": {
+        "x": 12,
+        "y": 48,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "{namespace=\"mini-ecommerce\"} |~ \"(?i)(error|exception|failed|panic)\"",
+          "refId": "A",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false
+      }
+    }
+  ]
+}

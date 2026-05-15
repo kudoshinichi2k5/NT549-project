@@ -1,0 +1,78 @@
+# =========================
+# GRAFANA DATASOURCES
+# =========================
+
+- name: Ensure datasource directory exists
+  file:
+    path: "{{ grafana_provisioning_dir }}"
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: "0755"
+  tags: [grafana, grafana_datasource]
+
+# -------------------------
+# Prometheus
+# -------------------------
+- name: Provision Prometheus datasource
+  template:
+    src: prometheus-ds.yml.j2
+    dest: "{{ grafana_provisioning_dir }}/prometheus.yml"
+    owner: grafana
+    group: grafana
+    mode: "0644"
+  notify: Restart Grafana
+  when: grafana_enable_prometheus_datasource
+  tags: [grafana, grafana_datasource, datasource_prometheus]
+
+- name: Remove Prometheus datasource when disabled
+  file:
+    path: "{{ grafana_provisioning_dir }}/prometheus.yml"
+    state: absent
+  notify: Restart Grafana
+  when: not grafana_enable_prometheus_datasource
+  tags: [grafana, grafana_datasource, datasource_prometheus]
+
+# -------------------------
+# Loki
+# -------------------------
+- name: Provision Loki datasource
+  template:
+    src: loki-ds.yml.j2
+    dest: "{{ grafana_provisioning_dir }}/loki.yml"
+    owner: grafana
+    group: grafana
+    mode: "0644"
+  notify: Restart Grafana
+  when: grafana_enable_loki_datasource
+  tags: [grafana, grafana_datasource, datasource_loki]
+
+- name: Remove Loki datasource when disabled
+  file:
+    path: "{{ grafana_provisioning_dir }}/loki.yml"
+    state: absent
+  notify: Restart Grafana
+  when: not grafana_enable_loki_datasource
+  tags: [grafana, grafana_datasource, datasource_loki]
+
+# -------------------------
+# Tempo (Tracing)
+# -------------------------
+- name: Provision Tempo datasource
+  template:
+    src: tempo-ds.yaml.j2
+    dest: "{{ grafana_provisioning_dir }}/tempo.yml"
+    owner: grafana
+    group: grafana
+    mode: "0644"
+  notify: Restart Grafana
+  when: grafana_enable_tempo_datasource
+  tags: [grafana, grafana_datasource, datasource_tempo, tempo]
+
+- name: Remove Tempo datasource when disabled
+  file:
+    path: "{{ grafana_provisioning_dir }}/tempo.yml"
+    state: absent
+  notify: Restart Grafana
+  when: not grafana_enable_tempo_datasource
+  tags: [grafana, grafana_datasource, datasource_tempo, tempo]

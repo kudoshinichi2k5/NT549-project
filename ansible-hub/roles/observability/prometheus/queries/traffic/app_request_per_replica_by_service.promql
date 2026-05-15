@@ -1,0 +1,28 @@
+# Metrics:
+# - http_server_requests_seconds_count
+# - kube_deployment_spec_replicas
+# Meaning:
+# - Effective request pressure handled by the desired replica budget of each service.
+# RL use-case:
+# - Workload pressure state feature aligned with the `replicas` state signal.
+(
+  sum by (service) (
+    rate(http_server_requests_seconds_count{job="mini-ecommerce-actuator",uri!="/actuator/prometheus"}[30s])
+  )
+  /
+  clamp_min(
+    max by (service) (
+      label_replace(
+        kube_deployment_spec_replicas{namespace="mini-ecommerce", deployment!=""},
+        "service",
+        "$1",
+        "deployment",
+        "^(.*)$"
+      )
+    ),
+    1
+  )
+)
+or on(service) (
+  0 * max by (service) (up{job="mini-ecommerce-actuator"})
+)

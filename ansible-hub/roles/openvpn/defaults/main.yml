@@ -1,0 +1,29 @@
+# OpenVPN basic
+openvpn_port: 1194
+openvpn_proto: udp
+
+# VPN network
+openvpn_network: 10.8.0.0
+openvpn_netmask: 255.255.255.0
+openvpn_tunnel_iface: tun0
+
+# Directories
+openvpn_server_dir: /etc/openvpn/server
+easy_rsa_dir: /etc/openvpn/easy-rsa
+
+# Client
+openvpn_client_name: devops
+openvpn_public_ip: "{{ ansible_host }}"
+
+# EC2 private interface (AWS Ubuntu)
+openvpn_private_iface: ens5
+
+# ===== VPC ROUTE (QUAN TRỌNG) =====
+# Phải đúng CIDR của VPC PROD
+vpc_network: 10.0.0.0
+vpc_netmask: 255.255.0.0
+
+# DNS for client
+openvpn_dns:
+  - 8.8.8.8
+  - 1.1.1.1

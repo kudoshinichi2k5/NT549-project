@@ -1,0 +1,1 @@
+avg(kube_node_status_condition{condition="Ready",status="true"}) * 100

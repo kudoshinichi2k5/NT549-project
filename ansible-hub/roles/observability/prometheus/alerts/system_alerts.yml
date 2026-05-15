@@ -1,0 +1,26 @@
+# ============================================================
+# Prometheus alert rules for system reliability signals.
+# These alerts are loaded by Prometheus from /etc/prometheus/alerts.
+# ============================================================
+groups:
+  - name: system_alerts
+    rules:
+      # Match the dashboard's fast CPU signal so short k6 spikes are caught.
+      - alert: NodeCPUHigh
+        expr: (100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[15s])) * 100)) > 80
+        for: 15s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node CPU cao"
+          description: 'Node {{ $labels.instance }} CPU đang {{ printf "%.1f" $value }}%'
+
+      # Alert when a pod enters CrashLoopBackOff for at least 1 minute.
+      - alert: PodCrashLoopBackOff
+        expr: max by(namespace, pod, container) (kube_pod_container_status_waiting_reason{namespace="mini-ecommerce", reason="CrashLoopBackOff"} == 1)
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod CrashLoopBackOff (mini-ecommerce)"
+          description: "Pod {{ $labels.pod }} namespace {{ $labels.namespace }} đang CrashLoopBackOff"

@@ -1,0 +1,12 @@
+---
+- name: Set timezone
+  import_tasks: timezone.yml
+
+- name: Disable swap (required for Kubernetes)
+  import_tasks: swap.yml
+
+- name: Configure kernel & sysctl for Kubernetes
+  import_tasks: sysctl.yml
+
+- name: Install common system packages
+  import_tasks: packages.yml

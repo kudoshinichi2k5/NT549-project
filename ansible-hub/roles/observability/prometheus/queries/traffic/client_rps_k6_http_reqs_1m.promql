@@ -1,0 +1,2 @@
+sum(irate(k6_http_reqs[15s]))
+or vector(0)

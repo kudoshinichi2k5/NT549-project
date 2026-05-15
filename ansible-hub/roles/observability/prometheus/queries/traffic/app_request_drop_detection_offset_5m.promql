@@ -1,0 +1,3 @@
+(sum(irate(http_server_requests_seconds_count{job="mini-ecommerce-actuator"}[15s])) -
+sum(irate(http_server_requests_seconds_count{job="mini-ecommerce-actuator"}[15s] offset 5m)))
+or vector(0)

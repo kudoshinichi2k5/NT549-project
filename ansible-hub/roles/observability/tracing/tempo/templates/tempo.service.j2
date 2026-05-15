@@ -1,0 +1,16 @@
+[Unit]
+Description=Grafana Tempo Tracing Backend
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User={{ tempo_user }}
+Group={{ tempo_group }}
+WorkingDirectory={{ tempo_data_dir }}
+ExecStart=/usr/local/bin/tempo -config.file={{ tempo_config_dir }}/tempo.yaml
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

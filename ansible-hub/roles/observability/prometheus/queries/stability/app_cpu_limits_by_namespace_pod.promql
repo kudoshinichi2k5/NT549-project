@@ -1,0 +1,2 @@
+sum by (namespace, pod)
+(kube_pod_container_resource_limits{namespace="mini-ecommerce",resource="cpu",unit="core"})

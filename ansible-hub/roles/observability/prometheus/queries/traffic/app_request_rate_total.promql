@@ -1,0 +1,2 @@
+(sum(rate(http_server_requests_seconds_count{job="mini-ecommerce-actuator",uri!="/actuator/prometheus"}[30s])) )
+or vector(0)

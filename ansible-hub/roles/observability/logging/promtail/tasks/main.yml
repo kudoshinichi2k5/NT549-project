@@ -1,0 +1,22 @@
+- name: Add Grafana Helm repo
+  command: helm repo add grafana https://grafana.github.io/helm-charts
+  args:
+    creates: /tmp/grafana_helm_repo_added
+  register: helm_repo_add
+
+- name: Update Helm repos
+  command: helm repo update
+  when: helm_repo_add is changed
+
+- name: Render Promtail values file
+  template:
+    src: values-promtail.yaml.j2
+    dest: /tmp/values-promtail.yaml
+
+- name: Install Promtail via Helm
+  command: >
+    helm upgrade --install promtail grafana/promtail
+    --namespace observability
+    --create-namespace
+    --kubeconfig /home/ubuntu/.kube/config
+    -f /tmp/values-promtail.yaml

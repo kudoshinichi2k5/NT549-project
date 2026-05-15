@@ -1,0 +1,28 @@
+# Metrics:
+# - http_server_requests_seconds_bucket
+# Meaning:
+# - Change in p95 latency versus 1 minute ago, expressed in milliseconds.
+# RL use-case:
+# - Reward delta signal showing whether recovery actions are improving latency.
+(
+  (
+    histogram_quantile(
+      0.95,
+      sum by (service, le) (
+        rate(http_server_requests_seconds_bucket{job="mini-ecommerce-actuator",uri!="/actuator/prometheus"}[1m])
+      )
+    )
+  )
+  -
+  (
+    histogram_quantile(
+      0.95,
+      sum by (service, le) (
+        rate(http_server_requests_seconds_bucket{job="mini-ecommerce-actuator",uri!="/actuator/prometheus"}[1m] offset 1m)
+      )
+    )
+  )
+) * 1000
+or on(service) (
+  0 * max by (service) (up{job="mini-ecommerce-actuator"})
+)

@@ -1,0 +1,2 @@
+sum by (namespace, deployment)
+(kube_deployment_status_replicas_available{namespace=~"mini-ecommerce|argocd"})

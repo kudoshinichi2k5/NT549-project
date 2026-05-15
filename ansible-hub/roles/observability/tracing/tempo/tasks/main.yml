@@ -1,0 +1,123 @@
+- name: Install required packages for Tempo
+  apt:
+    name:
+      - unzip
+      - curl
+      - nginx
+    state: present
+    update_cache: true
+
+- name: Create Tempo group
+  group:
+    name: "{{ tempo_group }}"
+    system: true
+
+- name: Create Tempo user
+  user:
+    name: "{{ tempo_user }}"
+    group: "{{ tempo_group }}"
+    system: true
+    shell: /usr/sbin/nologin
+
+- name: Create Tempo directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ tempo_user }}"
+    group: "{{ tempo_group }}"
+    mode: "0755"
+  loop:
+    - "{{ tempo_config_dir }}"
+    - "{{ tempo_data_dir }}"
+    - "{{ tempo_data_dir }}/traces"
+    - "{{ tempo_data_dir }}/wal"
+    - "{{ tempo_data_dir }}/generator"
+    - "{{ tempo_data_dir }}/generator/wal"
+    - "{{ tempo_install_dir }}"
+
+- name: Download Tempo binary archive
+  get_url:
+    url: "https://github.com/grafana/tempo/releases/download/v{{ tempo_version }}/tempo_{{ tempo_version }}_linux_amd64.tar.gz"
+    dest: "{{ tempo_archive_path }}"
+    mode: "0644"
+  notify: Restart Tempo
+
+- name: Extract Tempo archive
+  unarchive:
+    src: "{{ tempo_archive_path }}"
+    dest: "{{ tempo_install_dir }}"
+    remote_src: true
+  notify: Restart Tempo
+
+- name: Install Tempo binary
+  copy:
+    src: "{{ tempo_install_dir }}/tempo"
+    dest: /usr/local/bin/tempo
+    mode: "0755"
+    remote_src: true
+  notify: Restart Tempo
+
+- name: Render Tempo config
+  template:
+    src: tempo.yaml.j2
+    dest: "{{ tempo_config_dir }}/tempo.yaml"
+    owner: "{{ tempo_user }}"
+    group: "{{ tempo_group }}"
+    mode: "0644"
+  notify: Restart Tempo
+
+- name: Render Tempo systemd service
+  template:
+    src: tempo.service.j2
+    dest: /etc/systemd/system/tempo.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart Tempo
+
+- name: Ensure Tempo service is enabled and running
+  systemd:
+    name: tempo
+    daemon_reload: true
+    enabled: true
+    state: started
+
+- name: Deploy Tempo OTLP compatibility proxy config
+  template:
+    src: tempo-otlp-compat.nginx.j2
+    dest: /etc/nginx/sites-available/tempo-otlp-compat.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart nginx
+
+- name: Enable Tempo OTLP compatibility proxy site
+  file:
+    src: /etc/nginx/sites-available/tempo-otlp-compat.conf
+    dest: /etc/nginx/sites-enabled/tempo-otlp-compat.conf
+    state: link
+  notify: Restart nginx
+
+- name: Ensure nginx is enabled and running
+  systemd:
+    name: nginx
+    enabled: true
+    state: started
+
+- name: Render Tempo Kubernetes service manifest
+  template:
+    src: tempo-k8s-service.yaml.j2
+    dest: "/tmp/tempo-k8s-{{ tempo_k8s_namespace }}.yaml"
+    mode: "0644"
+  vars:
+    tempo_k8s_namespace: "{{ item }}"
+  loop: "{{ tempo_kubernetes_service_namespaces }}"
+  delegate_to: controller
+
+- name: Apply Tempo Kubernetes service manifest
+  command: "k0s kubectl apply -f /tmp/tempo-k8s-{{ item }}.yaml"
+  loop: "{{ tempo_kubernetes_service_namespaces }}"
+  delegate_to: controller
+

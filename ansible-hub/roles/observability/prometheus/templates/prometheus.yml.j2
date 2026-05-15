@@ -1,0 +1,149 @@
+# ============================================================
+# Prometheus Configuration
+# External Prometheus scraping k0s cluster (Helm-based)
+# ============================================================
+
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+  scrape_timeout: 4s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "127.0.0.1:{{ alertmanager_port | default(9093) }}"
+
+scrape_configs:
+
+  # ------------------------------------------------------------
+  # Prometheus self
+  # ------------------------------------------------------------
+  - job_name: "prometheus"
+    static_configs:
+      - targets:
+          - "localhost:{{ prometheus_port | default(9090) }}"
+
+  # ------------------------------------------------------------
+  # Tempo backend metrics
+  # ------------------------------------------------------------
+{% if prometheus_tempo_targets | length > 0 %}
+  - job_name: "tempo"
+    static_configs:
+      - targets:
+{% for target in prometheus_tempo_targets %}
+          - "{{ target }}"
+{% endfor %}
+        labels:
+          cluster: k0s
+          component: tempo
+{% endif %}
+
+  # ------------------------------------------------------------
+  # Node Exporter (Helm - EndpointSlice)
+  # Namespace : monitoring
+  # Service   : node-exporter-prometheus-node-exporter
+  # Scrape via NodeIP:9100 (external Prometheus compatible)
+  # ------------------------------------------------------------
+  - job_name: "k0s-node-exporter"
+    kubernetes_sd_configs:
+      - role: endpointslice
+        kubeconfig_file: /etc/prometheus/kubeconfig
+
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace]
+        action: keep
+        regex: monitoring
+
+      - source_labels: [__meta_kubernetes_service_name]
+        action: keep
+        regex: node-exporter-prometheus-node-exporter
+
+      - source_labels: [__meta_kubernetes_node_name]
+        target_label: node
+
+      - target_label: cluster
+        replacement: k0s
+
+
+  # ------------------------------------------------------------
+  # Mini-ecommerce actuator metrics via local Kubernetes API proxy
+  # Scrape    : kubectl proxy -> API server pod proxy -> /actuator/prometheus
+  # Notes:
+  # - Scraping through Service proxy collapses multiple replicas into one
+  #   target and causes counter resets/spikes when kube-proxy load-balances
+  #   across pods.
+  # - Scrape each pod individually so Prometheus keeps one time series per pod,
+  #   then aggregate with PromQL using `sum by (service)`.
+  # ------------------------------------------------------------
+  - job_name: "mini-ecommerce-actuator"
+    scrape_interval: 5s
+    kubernetes_sd_configs:
+      - role: pod
+        kubeconfig_file: /etc/prometheus/kubeconfig
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace]
+        action: keep
+        regex: mini-ecommerce
+
+      - source_labels: [__meta_kubernetes_pod_phase]
+        action: keep
+        regex: Running
+
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: api-gateway|order-service|payment-service|product-service
+
+      - source_labels: [__meta_kubernetes_pod_container_port_number]
+        action: keep
+        regex: 8080
+
+      - target_label: __address__
+        replacement: 127.0.0.1:8001
+
+      - source_labels:
+          - __meta_kubernetes_namespace
+          - __meta_kubernetes_pod_name
+          - __meta_kubernetes_pod_container_port_number
+        regex: (.*);(.*);(.*)
+        target_label: __metrics_path__
+        replacement: /api/v1/namespaces/$1/pods/$2:$3/proxy/actuator/prometheus
+
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod
+
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        target_label: service
+
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
+
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: instance
+
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        target_label: node
+
+      - target_label: cluster
+        replacement: k0s
+
+  # ------------------------------------------------------------
+  # kube-state-metrics (External Prometheus - via NodePort)
+  # Namespace : monitoring
+  # Service   : kube-state-metrics (NodePort 30080)
+  # Scrape    : NodeIP:30080
+  # ------------------------------------------------------------
+{% if prometheus_kube_state_targets | length > 0 %}
+  - job_name: "k0s-kube-state-metrics"
+    static_configs:
+      - targets:
+{% for target in prometheus_kube_state_targets %}
+          - "{{ target }}"
+{% endfor %}
+        labels:
+          cluster: k0s
+{% endif %}
+
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+  - "/etc/prometheus/alerts/*.yml"

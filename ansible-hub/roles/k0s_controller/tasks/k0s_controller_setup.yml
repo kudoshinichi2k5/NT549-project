@@ -1,0 +1,55 @@
+# Download & install k0s
+- name: Download k0s binary
+  get_url:
+    url: https://get.k0s.sh
+    dest: /tmp/install_k0s.sh
+    mode: '0755'
+
+- name: Install k0s
+  command: sh /tmp/install_k0s.sh
+  args:
+    creates: /usr/local/bin/k0s
+
+# Config directory
+- name: Ensure /etc/k0s directory exists
+  file:
+    path: /etc/k0s
+    state: directory
+    mode: '0755'
+
+# Cluster config
+- name: Render k0s cluster configuration
+  template:
+    src: k0s.yaml.j2
+    dest: /etc/k0s/k0s.yaml
+    owner: root
+    group: root
+    mode: '0644'
+
+# Controller install
+- name: Install k0s controller
+  command: k0s install controller --config /etc/k0s/k0s.yaml
+  args:
+    creates: /etc/systemd/system/k0scontroller.service
+
+- name: Start k0s controller
+  systemd:
+    name: k0scontroller
+    enabled: yes
+    state: started
+
+- name: Wait for k0s API ready
+  wait_for:
+    port: 6443
+    delay: 10
+    timeout: 300
+
+# Worker token
+- name: Create worker join token
+  command: k0s token create --role=worker
+  register: worker_token
+  changed_when: false
+
+- name: Set worker token fact
+  set_fact:
+    k0s_worker_token: "{{ worker_token.stdout }}"

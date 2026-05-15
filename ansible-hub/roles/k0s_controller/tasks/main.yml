@@ -1,0 +1,11 @@
+- import_tasks: k0s_controller_setup.yml
+  tags: [k0s, controller]
+
+- import_tasks: install_storage.yml
+  tags: [storage]
+
+- import_tasks: install_ingress.yml
+  tags: [ingress]
+
+- import_tasks: rbac.yml
+  tags: [rbac, prometheus]

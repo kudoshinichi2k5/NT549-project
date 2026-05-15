@@ -1,0 +1,918 @@
+{
+  "uid": "prometheus-system-metrics",
+  "title": "Prometheus - System Metrics",
+  "tags": [
+    "prometheus",
+    "kubernetes",
+    "metrics"
+  ],
+  "schemaVersion": 37,
+  "version": 1,
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 2000,
+      "type": "row",
+      "title": "SYSTEM METRICS",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2001,
+      "type": "row",
+      "title": "SYSTEM - HEALTH LAYER",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2002,
+      "type": "row",
+      "title": "SYSTEM - FAILURE SIGNAL LAYER",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2003,
+      "type": "row",
+      "title": "SYSTEM - RESOURCE PRESSURE LAYER",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 31,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Node Ready Ratio",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "avg(kube_node_status_condition{condition=\"Ready\",status=\"true\"}) * 100",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "noValue": "0"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Nodes Not Ready",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 6,
+        "y": 21,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"false\"})",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "0"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Cluster CPU Utilization (%)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 12,
+        "y": 21,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "sum(irate(node_cpu_seconds_total{mode!=\"idle\"}[15s])) / sum(irate(node_cpu_seconds_total[15s])) * 100",
+          "refId": "A",
+          "legendFormat": "cluster"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Cluster Memory Utilization (%)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 18,
+        "y": 21,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "sum(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes) * 100",
+          "refId": "A",
+          "legendFormat": "cluster"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Pod Restart by Namespace/Pod (5m)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 12,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total[5m]))",
+          "refId": "A",
+          "legendFormat": "{{namespace}}/{{pod}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "CrashLoopBackOff by Namespace/Pod",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 12,
+        "y": 26,
+        "w": 12,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "sum by (namespace, pod) (kube_pod_container_status_waiting_reason{reason=\"CrashLoopBackOff\"})",
+          "refId": "A",
+          "legendFormat": "{{namespace}}/{{pod}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Deployment Replicas Unavailable",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "sum by (deployment) (kube_deployment_status_replicas_unavailable)",
+          "refId": "A",
+          "legendFormat": "{{deployment}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "CPU Pressure Ratio",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "avg((100 - avg by(instance)(irate(node_cpu_seconds_total{mode=\"idle\"}[15s]))*100) > 80)",
+          "refId": "A",
+          "legendFormat": "ratio"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Memory Pressure Ratio",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 8,
+        "y": 32,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "avg(((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100) > 85)",
+          "refId": "A",
+          "legendFormat": "ratio"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "CPU Usage per Pod",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 16,
+        "y": 32,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "sum by (namespace, pod) (irate(container_cpu_usage_seconds_total{namespace!=\"\",pod!=\"\"}[15s]))",
+          "refId": "A",
+          "legendFormat": "{{namespace}}/{{pod}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Memory Usage per Pod",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 12,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "sum by (namespace, pod) (container_memory_usage_bytes{namespace!=\"\",pod!=\"\"})",
+          "refId": "A",
+          "legendFormat": "{{namespace}}/{{pod}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 2100,
+      "type": "row",
+      "title": "CPU Resource Overview",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2101,
+      "type": "timeseries",
+      "title": "CPU Usage by Namespace (System / App / Monitoring / ArgoCD)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 2,
+        "w": 8,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "clamp_min(sum(irate(node_cpu_seconds_total{mode!=\"idle\"}[15s])) - (sum(sum by (service) (rate(process_cpu_time_ns_total{job=\"mini-ecommerce-actuator\"}[1m])) / 1e9) or sum(sum by (service) (process_cpu_usage{job=\"mini-ecommerce-actuator\"} * system_cpu_count{job=\"mini-ecommerce-actuator\"})) or vector(0)), 0) or vector(0)",
+          "refId": "A",
+          "legendFormat": "System CPU (cores)"
+        },
+        {
+          "expr": "sum(sum by (service) (rate(process_cpu_time_ns_total{job=\"mini-ecommerce-actuator\"}[1m])) / 1e9) or sum(sum by (service) (process_cpu_usage{job=\"mini-ecommerce-actuator\"} * system_cpu_count{job=\"mini-ecommerce-actuator\"})) or vector(0)",
+          "refId": "B",
+          "legendFormat": "App CPU (cores)"
+        },
+        {
+          "expr": "vector(0)",
+          "refId": "C",
+          "legendFormat": "Monitoring CPU (cores)"
+        },
+        {
+          "expr": "vector(0)",
+          "refId": "D",
+          "legendFormat": "ArgoCD CPU (cores)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 2102,
+      "type": "timeseries",
+      "title": "CPU Usage per Node (%)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 8,
+        "y": 2,
+        "w": 8,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[15s])) * 100)",
+          "refId": "A",
+          "legendFormat": "{{instance}} CPU (%)"
+        },
+        {
+          "expr": "100 - (avg(irate(node_cpu_seconds_total{mode=\"idle\"}[15s])) * 100)",
+          "refId": "B",
+          "legendFormat": "Cluster Avg CPU (%)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 2103,
+      "type": "timeseries",
+      "title": "CPU Usage per Service (mini-ecommerce)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 16,
+        "y": 2,
+        "w": 8,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "(sum by (service) (rate(process_cpu_time_ns_total{job=\"mini-ecommerce-actuator\"}[1m])) / 1e9) or (sum by (service) (process_cpu_usage{job=\"mini-ecommerce-actuator\"} * system_cpu_count{job=\"mini-ecommerce-actuator\"})) or on(service) (0 * max by (service) (up{job=\"mini-ecommerce-actuator\"}))",
+          "refId": "A",
+          "legendFormat": "{{service}} (cores)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cores",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          },
+          "decimals": 3,
+          "min": 0,
+          "max": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 2110,
+      "type": "row",
+      "title": "Memory Resource Overview",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2111,
+      "type": "timeseries",
+      "title": "Memory Usage by Namespace (System / App / Monitoring / ArgoCD)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 8,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "clamp_min((sum(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / (1024^3)) - ((sum(sum by (service) (jvm_memory_used_bytes{job=\"mini-ecommerce-actuator\"})) / (1024^3)) or vector(0)), 0) or vector(0)",
+          "refId": "A",
+          "legendFormat": "System RAM (GiB)"
+        },
+        {
+          "expr": "(sum(sum by (service) (jvm_memory_used_bytes{job=\"mini-ecommerce-actuator\"})) / (1024^3)) or vector(0)",
+          "refId": "B",
+          "legendFormat": "App RAM (GiB)"
+        },
+        {
+          "expr": "vector(0)",
+          "refId": "C",
+          "legendFormat": "Monitoring RAM (GiB)"
+        },
+        {
+          "expr": "vector(0)",
+          "refId": "D",
+          "legendFormat": "ArgoCD RAM (GiB)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decgbytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 2112,
+      "type": "timeseries",
+      "title": "Memory Usage per Node (GiB)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 8,
+        "y": 8,
+        "w": 8,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / (1024^3)",
+          "refId": "A",
+          "legendFormat": "{{instance}} RAM (GiB)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decgbytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 2113,
+      "type": "timeseries",
+      "title": "Memory Usage per Service (mini-ecommerce)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 16,
+        "y": 8,
+        "w": 8,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "((sum by (service) (jvm_memory_used_bytes{job=\"mini-ecommerce-actuator\"})) / (1024^3)) or on(service) (0 * max by (service) (up{job=\"mini-ecommerce-actuator\"}))",
+          "refId": "A",
+          "legendFormat": "{{service}} (GiB)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decgbytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 2120,
+      "type": "row",
+      "title": "Cluster & HPA Summary (Dynamic Trends)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2121,
+      "type": "timeseries",
+      "title": "Pods Desired vs Ready (per Deployment, namespace=mini-ecommerce|argocd)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "sum by (namespace, deployment) (kube_deployment_spec_replicas{namespace=~\"mini-ecommerce|argocd\"})",
+          "refId": "A",
+          "legendFormat": "{{namespace}}/{{deployment}} Desired"
+        },
+        {
+          "expr": "sum by (namespace, deployment) (kube_deployment_status_replicas_available{namespace=~\"mini-ecommerce|argocd\"})",
+          "refId": "B",
+          "legendFormat": "{{namespace}}/{{deployment}} Ready"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 2122,
+      "type": "timeseries",
+      "title": "HPA Desired vs Current Replicas (namespace=mini-ecommerce|argocd)",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "sum by (namespace, horizontalpodautoscaler) (kube_horizontalpodautoscaler_status_desired_replicas{namespace=~\"mini-ecommerce|argocd\"}) or vector(0)",
+          "refId": "A",
+          "legendFormat": "{{namespace}}/{{horizontalpodautoscaler}} Desired"
+        },
+        {
+          "expr": "sum by (namespace, horizontalpodautoscaler) (kube_horizontalpodautoscaler_status_current_replicas{namespace=~\"mini-ecommerce|argocd\"}) or vector(0)",
+          "refId": "B",
+          "legendFormat": "{{namespace}}/{{horizontalpodautoscaler}} Current"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    }
+  ]
+}

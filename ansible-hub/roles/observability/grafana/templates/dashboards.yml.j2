@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'kubernetes'
+    folder: 'Kubernetes'
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: {{ grafana_dashboard_dir }}

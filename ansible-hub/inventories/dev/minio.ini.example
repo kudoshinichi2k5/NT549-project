@@ -1,0 +1,12 @@
+# =====================================================
+# MinIO Inventory - Dev (KVM) (Example)
+# Actual inventory is generated automatically from
+# jenkins-kvm-hub Terraform stack (minio).
+# =====================================================
+
+[minio]
+minio-1 ansible_host=192.168.201.30 ansible_user=ubuntu ansible_ssh_private_key_file=<SSH_PRIVATE_KEY_PATH>
+
+[all:vars]
+minio_api_url=http://192.168.201.30:9000
+minio_console_url=http://192.168.201.30:9001

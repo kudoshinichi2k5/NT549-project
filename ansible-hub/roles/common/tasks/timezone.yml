@@ -1,0 +1,4 @@
+---
+- name: Configure system timezone
+  timezone:
+    name: "{{ common_timezone }}"

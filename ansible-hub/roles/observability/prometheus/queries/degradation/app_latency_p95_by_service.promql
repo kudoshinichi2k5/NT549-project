@@ -1,0 +1,15 @@
+# Metrics:
+# - http_server_requests_seconds_bucket
+# Meaning:
+# - Service-level p95 latency over the last minute, expressed in milliseconds.
+# RL use-case:
+# - Primary latency quality signal for self-healing policy state.
+histogram_quantile(
+  0.95,
+  sum by (service, le) (
+    rate(http_server_requests_seconds_bucket{job="mini-ecommerce-actuator",uri!="/actuator/prometheus"}[1m])
+  )
+) * 1000
+or on(service) (
+  0 * max by (service) (up{job="mini-ecommerce-actuator"})
+)

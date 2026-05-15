@@ -1,0 +1,1 @@
+count(sum by (client, server) (irate(traces_service_graph_request_total[15s]))) or vector(0)

@@ -1,0 +1,1 @@
+count(sum by (service) (irate(traces_spanmetrics_calls_total[15s]))) or vector(0)

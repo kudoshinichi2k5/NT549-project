@@ -1,0 +1,54 @@
+---
+- name: Ensure kubeconfig is available
+  command: k0s kubectl version --client
+  changed_when: false
+
+- name: Validate MetalLB address pool configuration
+  assert:
+    that:
+      - metallb_ip_pool_addresses is defined
+      - metallb_ip_pool_addresses | string | length > 0
+    fail_msg: "Set metallb_ip_pool_addresses (string or list of IP ranges/CIDRs) in inventory/group vars."
+
+- name: Normalize MetalLB address pool values
+  set_fact:
+    metallb_ip_pool_addresses_normalized: >-
+      {{
+        metallb_ip_pool_addresses
+        if (metallb_ip_pool_addresses is iterable and metallb_ip_pool_addresses is not string)
+        else [metallb_ip_pool_addresses]
+      }}
+
+- name: Deploy MetalLB core components
+  command: "k0s kubectl apply -f {{ metallb_manifest_url }}"
+  register: metallb_core_apply
+  changed_when: metallb_core_apply.stdout is search('created')
+
+- name: Wait for MetalLB controller to be ready
+  command: >-
+    k0s kubectl -n {{ metallb_namespace }}
+    rollout status deployment/{{ metallb_controller_deployment }}
+    --timeout={{ metallb_rollout_timeout_seconds }}s
+  register: metallb_rollout
+  retries: 15
+  delay: 10
+  until: metallb_rollout.rc == 0
+  changed_when: false
+
+- name: Wait for MetalLB speaker to be ready
+  command: >-
+    k0s kubectl -n {{ metallb_namespace }}
+    rollout status daemonset/{{ metallb_speaker_daemonset }}
+    --timeout={{ metallb_rollout_timeout_seconds }}s
+  register: metallb_speaker_rollout
+  retries: 15
+  delay: 10
+  until: metallb_speaker_rollout.rc == 0
+  changed_when: false
+
+- name: Configure MetalLB IP pool
+  command: k0s kubectl apply -f -
+  args:
+    stdin: "{{ lookup('template', 'metallb-ip-pool.yaml.j2') }}"
+  register: metallb_pool_apply
+  changed_when: metallb_pool_apply.stdout is search('created|configured')

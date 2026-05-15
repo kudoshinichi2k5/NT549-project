@@ -1,0 +1,5 @@
+---
+- hosts: k0s_controller
+  become: true
+  roles:
+    - argocd

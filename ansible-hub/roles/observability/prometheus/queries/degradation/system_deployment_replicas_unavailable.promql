@@ -1,0 +1,1 @@
+sum by (deployment) (kube_deployment_status_replicas_unavailable)

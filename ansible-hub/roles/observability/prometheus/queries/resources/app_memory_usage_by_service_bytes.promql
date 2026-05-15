@@ -1,0 +1,1 @@
+sum by (service) (jvm_memory_used_bytes{job="mini-ecommerce-actuator"})

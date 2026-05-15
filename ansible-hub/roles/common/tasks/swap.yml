@@ -1,0 +1,10 @@
+---
+- name: Disable swap immediately
+  command: swapoff -a
+  when: ansible_swaptotal_mb | int > 0
+
+- name: Remove swap entry from /etc/fstab
+  replace:
+    path: /etc/fstab
+    regexp: '^\s*([^#]\S+)\s+\S+\s+swap\s+'
+    replace: '# \1'

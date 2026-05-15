@@ -1,0 +1,2 @@
+sum(irate(node_cpu_seconds_total{mode!="idle"}[15s])) / sum(irate(node_cpu_seconds_total[15s]))
+* 100

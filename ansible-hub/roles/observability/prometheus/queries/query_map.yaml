@@ -1,0 +1,196 @@
+dashboards:
+  prometheus-application-metrics.json:
+    uid: prometheus-application-metrics
+    panels:
+      1:
+        title: Request Rate (RPS)
+        queries:
+          - traffic/app_request_rate_total.promql
+      2:
+        title: Request Rate per Service
+        queries:
+          - traffic/app_request_rate_by_service.promql
+      3:
+        title: Request Rate per Namespace
+        queries:
+          - traffic/app_request_rate_by_namespace.promql
+      4:
+        title: Request Drop Detection (offset 5m)
+        queries:
+          - traffic/app_request_drop_detection_offset_5m.promql
+      5:
+        title: Error Rate per Service (%)
+        queries:
+          - degradation/app_error_rate_by_service.promql
+      6:
+        title: Error Spike per Service (5m)
+        queries:
+          - degradation/app_error_spike_by_service_5m.promql
+      7:
+        title: P95 Latency per Service
+        queries:
+          - degradation/app_latency_p95_by_service.promql
+      8:
+        title: Latency Violation Signal per Service
+        queries:
+          - degradation/app_latency_violation_signal_by_service.promql
+      9:
+        title: Pod Restart (mini-ecommerce)
+        queries:
+          - stability/app_pod_restart_mini_ecommerce_5m.promql
+      10:
+        title: CPU Usage by Service
+        queries:
+          - resources/app_cpu_usage_by_service_pct.promql
+      11:
+        title: Memory Usage by Service
+        queries:
+          - resources/app_memory_usage_by_service_bytes.promql
+      12:
+        title: Deployment Replicas Available
+        queries:
+          - stability/app_deployment_replicas_available.promql
+      13:
+        title: Deployment Spec Replicas
+        queries:
+          - stability/app_deployment_spec_replicas.promql
+      14:
+        title: CPU Requests vs Limits
+        queries:
+          - stability/app_cpu_requests_by_namespace_pod.promql
+          - stability/app_cpu_limits_by_namespace_pod.promql
+      15:
+        title: Memory Requests vs Limits
+        queries:
+          - stability/app_memory_requests_by_namespace_pod.promql
+          - stability/app_memory_limits_by_namespace_pod.promql
+      16:
+        title: Client RPS vs Server RPS
+        queries:
+          - traffic/server_rps_api_gateway_1m.promql
+          - traffic/client_rps_k6_http_reqs_1m.promql
+
+  prometheus-system-metrics.json:
+    uid: prometheus-system-metrics
+    panels:
+      1:
+        title: Node Ready Ratio
+        queries:
+          - stability/system_node_ready_ratio.promql
+      2:
+        title: Nodes Not Ready
+        queries:
+          - stability/system_nodes_not_ready.promql
+      3:
+        title: Cluster CPU Utilization (%)
+        queries:
+          - resources/system_cluster_cpu_utilization_pct.promql
+      4:
+        title: Cluster Memory Utilization (%)
+        queries:
+          - resources/system_cluster_memory_utilization_pct.promql
+      5:
+        title: Pod Restart by Namespace/Pod (5m)
+        queries:
+          - stability/system_pod_restart_by_namespace_pod_5m.promql
+      6:
+        title: CrashLoopBackOff by Namespace/Pod
+        queries:
+          - degradation/system_crashloopbackoff_by_namespace_pod.promql
+      7:
+        title: Deployment Replicas Unavailable
+        queries:
+          - degradation/system_deployment_replicas_unavailable.promql
+      8:
+        title: CPU Pressure Ratio
+        queries:
+          - degradation/system_cpu_pressure_ratio.promql
+      9:
+        title: Memory Pressure Ratio
+        queries:
+          - degradation/system_memory_pressure_ratio.promql
+      10:
+        title: CPU Usage per Pod
+        queries:
+          - resources/system_cpu_usage_per_pod.promql
+      11:
+        title: Memory Usage per Pod
+        queries:
+          - resources/system_memory_usage_per_pod.promql
+      2101:
+        title: CPU Usage by Namespace (System / App / Monitoring / ArgoCD)
+        queries:
+          - resources/system_cpu_usage_namespace_system.promql
+          - resources/system_cpu_usage_namespace_app.promql
+          - resources/system_cpu_usage_namespace_observability.promql
+          - resources/system_cpu_usage_namespace_argocd.promql
+      2102:
+        title: CPU Usage per Node (%)
+        queries:
+          - resources/system_cpu_usage_per_node_pct.promql
+          - resources/system_cpu_usage_cluster_avg_pct.promql
+      2103:
+        title: CPU Usage per Service (mini-ecommerce)
+        queries:
+          - resources/system_cpu_usage_per_service_mini_ecommerce.promql
+      2111:
+        title: Memory Usage by Namespace (System / App / Monitoring / ArgoCD)
+        queries:
+          - resources/system_memory_usage_namespace_system_gib.promql
+          - resources/system_memory_usage_namespace_app_gib.promql
+          - resources/system_memory_usage_namespace_observability_gib.promql
+          - resources/system_memory_usage_namespace_argocd_gib.promql
+      2112:
+        title: Memory Usage per Node (GiB)
+        queries:
+          - resources/system_memory_usage_per_node_gib.promql
+      2113:
+        title: Memory Usage per Service (mini-ecommerce)
+        queries:
+          - resources/system_memory_usage_per_service_mini_ecommerce_gib.promql
+      2121:
+        title: Pods Desired vs Ready (per Deployment, namespace=mini-ecommerce|argocd)
+        queries:
+          - stability/system_pods_desired_by_namespace_deployment.promql
+          - stability/system_pods_ready_by_namespace_deployment.promql
+      2122:
+        title: HPA Desired vs Current Replicas (namespace=mini-ecommerce|argocd)
+        queries:
+          - stability/system_hpa_desired_replicas_by_namespace.promql
+          - stability/system_hpa_current_replicas_by_namespace.promql
+
+  tempo-tracing.json:
+    uid: tempo-tracing
+    panels:
+      2:
+        title: Trace Throughput (spans/s)
+        queries:
+          - traffic/tempo_trace_throughput_spans_rate.promql
+      3:
+        title: Error Spans (5m rate)
+        queries:
+          - degradation/tempo_error_spans_5m_rate.promql
+      4:
+        title: Active Services
+        queries:
+          - stability/tempo_active_services.promql
+      5:
+        title: Active Service Edges
+        queries:
+          - stability/tempo_active_service_edges.promql
+      6:
+        title: Span Rate by Service
+        queries:
+          - traffic/tempo_span_rate_by_service.promql
+      7:
+        title: Error Span Rate by Service
+        queries:
+          - degradation/tempo_error_span_rate_by_service.promql
+      8:
+        title: P95 Span Latency by Service
+        queries:
+          - degradation/tempo_span_latency_p95_by_service.promql
+      9:
+        title: Service Graph Request Rate
+        queries:
+          - traffic/tempo_service_graph_request_rate.promql

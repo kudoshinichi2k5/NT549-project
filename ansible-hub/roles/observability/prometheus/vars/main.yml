@@ -1,0 +1,8 @@
+# Prometheus version
+prometheus_version: "2.49.1"
+
+# Prometheus listen port
+prometheus_port: 9090
+
+# kubectl version for local apiserver proxy
+kubectl_version: "v1.35.1"
